@@ -1,81 +1,227 @@
-# Yapay Zeka Destekli Doküman ve Araştırma Yönetim Sistemi
+# ArcticDocs — Yapay Zeka Destekli Doküman ve Araştırma Yönetim Sistemi
 
-Bu proje, araştırmacıların ve öğrencilerin akademik belgelerini (PDF/TXT) merkezi bir platformda yönetmelerini, yapay zeka desteğiyle analiz etmelerini ve anlam bazlı (semantik) arama yapmalarını sağlayan modern bir doküman yönetim sistemidir.
+---
 
-## 🌟 Öne Çıkan Özellikler
-* **Akıllı Analiz:** Yüklenen PDF'lerin Groq LLM (Llama 3.1) ile otomatik özetlenmesi ve anahtar kelime çıkarımı.
-* **Semantik Arama:** `pgvector` ve `HNSW` indeksi kullanarak belgeler içinde anlam bazlı (vektörel) arama.
-* **Akademik Atıf Desteği:** APA, MLA, BibTeX ve IEEE formatlarında otomatik atıf oluşturma.
-* **PDF Görüntüleyici:** PDF.js ile tarayıcı üzerinde PDF okuma ve metin işaretleme.
-* **Koleksiyon & Rapor:** Belgeler koleksiyonlara eklenebilir, Groq ile otomatik literatür raporu oluşturulabilir.
-* **Asenkron İşleme:** Uzun süren LLM işlemlerinin `Celery` ve `Redis` ile arka planda yönetilmesi.
+## README Dosyası Hakkında
 
-## 🛠 Teknoloji Yığını
-| Katman | Teknoloji |
+### README Dosyasının Amacı
+
+README dosyası, bir yazılım projesinin "kapı kartı" işlevi görür. Projeyi ilk kez inceleyen bir geliştirici, kullanıcı veya değerlendirici bu dosya aracılığıyla projenin ne olduğunu, nasıl çalıştığını ve nasıl kullanılacağını öğrenir. İyi bir README; projenin amacını, kurulum adımlarını, kullanım senaryolarını ve katkı kurallarını sade ve anlaşılır bir biçimde aktarır.
+
+### Yazılım Projelerinde Neden Önemlidir?
+
+- **İlk İzlenim:** Projeyi değerlendiren herkes (hoca, müşteri, işe alımcı) README'yi okuyarak karar verir; eksik ya da dağınık bir README projeyi küçük düşürür.
+- **Zaman Tasarrufu:** Kurulum ve yapılandırma adımları açıkça yazılırsa, ekip üyeleri birbirinden bağımsız şekilde geliştirme ortamı kurabilir.
+- **Sürdürülebilirlik:** Projeye aylar sonra dönen bir geliştirici bile README sayesinde hızla oryante olur.
+- **Açık Kaynak Kültürü:** GitHub'da bir proje ne kadar iyi belgelenirse o kadar çok katkı çeker. README, projenin "vitrin"idir.
+- **Profesyonellik:** Kapsamlı bir README, projenin ciddiyetle ele alındığını gösterir ve akademik/ticari değerini artırır.
+
+---
+
+## Proje Adı
+
+**ArcticDocs** — Yapay Zeka Destekli Doküman ve Araştırma Yönetim Sistemi
+
+---
+
+## Proje Tanımı
+
+ArcticDocs; araştırmacıların ve öğrencilerin akademik belgelerini (PDF / TXT) merkezi bir platformda yönetmelerini, yapay zeka desteğiyle analiz etmelerini ve anlam bazlı (semantik) arama yapmalarını sağlayan modern bir doküman yönetim sistemidir.
+
+Kullanıcılar belgelerini sisteme yükledikten sonra Groq LLM (Llama 3.1) otomatik olarak her belgeyi özetler ve anahtar kelimelerini çıkarır. pgvector tabanlı vektör indeksi sayesinde belgeler arasında anlam bazlı arama yapılabilir; APA, MLA, BibTeX ve IEEE formatlarında akademik atıf üretilebilir. Tüm bu ağır LLM işlemleri Celery ve Redis üzerinden asenkron olarak yönetilir.
+
+---
+
+## Özellikler
+
+| # | Özellik | Açıklama |
+|---|---|---|
+| 1 | **Akıllı Belge Analizi** | Yüklenen PDF/TXT dosyaları Groq LLM (Llama 3.1 8B Instant) ile otomatik olarak özetlenir ve anahtar kelimeleri çıkarılır. |
+| 2 | **Semantik Arama** | `pgvector` + `HNSW` indeksi ile belgeler arasında anlam bazlı vektörel arama yapılır. |
+| 3 | **Akademik Atıf Üretimi** | APA, MLA, BibTeX ve IEEE formatlarında tek tıkla atıf oluşturma ve dışa aktarma. |
+| 4 | **Tarayıcı İçi PDF Görüntüleyici** | PDF.js ile sayfa gezinme, yakınlaştırma ve metin üzerinde vurgulama / yorum / alt çizgi ekleme. |
+| 5 | **Koleksiyon Yönetimi** | Belgeler tematik koleksiyonlara gruplanabilir; koleksiyon düzeyinde literatür özeti ve trend analizi raporu oluşturulabilir. |
+| 6 | **Asenkron İşlem Kuyruğu** | Uzun süren LLM işlemleri Celery + Redis aracılığıyla arka planda yönetilir; kullanıcı arayüzü bloke olmaz. |
+| 7 | **Çoklu Kimlik Doğrulama** | E-posta/şifre ile kayıt ve JWT tabanlı oturum yönetiminin yanı sıra Google ve GitHub OAuth 2.0 ile sosyal giriş. |
+| 8 | **Hız Sınırlama (Rate Limiting)** | `slowapi` ile API uç noktalarına istek sınırı uygulanarak sunucu kötüye kullanımı önlenir. |
+| 9 | **Yönetici Paneli** | Admin kullanıcıları sistem istatistiklerini, kullanıcı listesini ve işlem loglarını görüntüleyebilir. |
+| 10 | **Tam Konteynerize Altyapı** | Docker Compose ile tek komutta tüm servisler (API, veritabanı, önbellek, dosya depolama) ayağa kalkar. |
+
+---
+
+## Kullanılan Teknolojiler
+
+### Backend
+
+| Teknoloji | Versiyon | Kullanım Amacı |
+|---|---|---|
+| Python | 3.11 | Ana programlama dili |
+| FastAPI | 0.111.0 | RESTful API çatısı |
+| Uvicorn | 0.30.1 | ASGI sunucusu |
+| SQLAlchemy | 2.0.36 | ORM ve asenkron DB erişimi |
+| Alembic | 1.13.1 | Veritabanı migration yönetimi |
+| Pydantic | 2.7.1 | Veri doğrulama ve şema yönetimi |
+| Celery | 5.4.0 | Asenkron görev kuyruğu |
+| Groq SDK | 0.9.0 | LLM (Llama 3.1) entegrasyonu |
+| Sentence Transformers | 3.0.1 | Metin embedding üretimi |
+| python-jose | 3.3.0 | JWT token üretimi ve doğrulama |
+| passlib / bcrypt | 1.7.4 | Şifre hashleme |
+| MinIO SDK | 7.2.7 | Nesne depolama istemcisi |
+| pypdf | 4.3.1 | PDF metin çıkarımı |
+| slowapi | 0.1.9 | API hız sınırlama |
+
+### Frontend
+
+| Teknoloji | Kullanım Amacı |
 |---|---|
-| **Backend** | Python 3.11 + FastAPI |
-| **Frontend** | HTML5 + CSS3 + Vanilla JavaScript |
-| **Veritabanı** | PostgreSQL + pgvector |
-| **LLM** | Groq API (Llama 3.1 8B Instant) |
-| **Embedding** | Sentence Transformers (all-MiniLM-L6-v2) |
-| **Dosya Depolama** | MinIO (S3 Uyumlu Self-hosted) |
-| **Kimlik Doğrulama** | JWT + Redis Token Blacklist |
-| **Kuyruk / Cache** | Redis + Celery |
-| **Konteyner** | Docker + Docker Compose |
+| HTML5 | Sayfa yapısı |
+| CSS3 (Vanilla) | Stil; `variables.css`, `layout.css`, `dashboard.css`, `components.css`, `login.css` modülleri |
+| JavaScript (Vanilla) | İstemci mantığı; `api.js`, `auth.js`, `upload.js`, `search.js`, `collections.js`, `citation.js` modülleri |
+| PDF.js 3.11 | Tarayıcı içi PDF görüntüleme |
+| Google Fonts | Cormorant Garamond, DM Sans, JetBrains Mono fontları |
 
-## 📋 Ön Koşullar
-* **Docker Desktop**
-* **Python 3.11+**
-* **Groq API Key** ([console.groq.com](https://console.groq.com) üzerinden ücretsiz alınabilir)
+### Veritabanı
 
-## 🚀 Hızlı Başlangıç
+| Teknoloji | Kullanım Amacı |
+|---|---|
+| PostgreSQL 16 | İlişkisel veritabanı |
+| pgvector | Vektör depolama ve HNSW tabanlı semantik arama |
 
-1. **Ortam değişkenlerini hazırlayın:**
+### Altyapı ve Diğer Servisler
+
+| Teknoloji | Kullanım Amacı |
+|---|---|
+| Redis 7 | Celery mesaj broker'ı ve JWT token kara listesi |
+| MinIO | Self-hosted S3 uyumlu nesne depolama (PDF/TXT dosyaları) |
+| Docker & Docker Compose | Konteynerize dağıtım |
+| Groq API | Bulut tabanlı LLM (Llama 3.1 8B Instant) servisi |
+| Google OAuth 2.0 | Sosyal kimlik doğrulama |
+| GitHub OAuth 2.0 | Sosyal kimlik doğrulama |
+
+---
+
+## Kurulum Adımları
+
+### Ön Koşullar
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Docker Engine + Docker Compose dahil)
+- Python 3.11+ *(yalnızca frontend yerel sunucusu için)*
+- Groq API Anahtarı — [console.groq.com](https://console.groq.com) adresinden ücretsiz alınabilir
+
+### 1. Depoyu Klonlayın
+
 ```bash
-cp .env.example .env
-# .env dosyasında GROQ_API_KEY ve SECRET_KEY değerlerini doldurun
+git clone https://github.com/kullanici-adi/ai-document-research-system-1.git
+cd ai-document-research-system-1
 ```
 
-2. **Sistemi Docker ile ayağa kaldırın:**
+### 2. Ortam Değişkenlerini Yapılandırın
+
 ```bash
+cd backend
+cp .env.example .env
+```
+
+`.env` dosyasını bir metin editörüyle açın ve zorunlu değerleri doldurun:
+
+```env
+SECRET_KEY=guclu-ve-rastgele-bir-anahtar-girin
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxx
+
+# İsteğe bağlı: Google ve GitHub OAuth
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+```
+
+### 3. Docker ile Tüm Servisleri Başlatın
+
+```bash
+# backend/ dizininde
 docker-compose up --build
 ```
 
-3. **Frontend'i başlatın:**
+Bu komut aşağıdaki servisleri otomatik olarak başlatır:
+
+| Servis | Adres |
+|---|---|
+| FastAPI (API) | http://localhost:8000 |
+| Swagger UI (API Docs) | http://localhost:8000/docs |
+| PostgreSQL | localhost:5432 |
+| Redis | localhost:6379 |
+| MinIO (Nesne Depolama) | http://localhost:9000 |
+| MinIO Yönetim Paneli | http://localhost:9001 |
+
+### 4. Frontend'i Başlatın
+
+Yeni bir terminal açın:
+
 ```bash
 cd frontend
 python -m http.server 3000
 ```
 
-4. **Erişim:**
-   - 🌐 Uygulama: [http://localhost:3000](http://localhost:3000)
-   - 📖 API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-   - 🗄 MinIO: [http://localhost:9001](http://localhost:9001)
+### 5. Uygulamaya Erişin
 
-## 📁 Proje Yapısı
-```text
-proje/
-├── backend/
-│   ├── app/
-│   │   ├── api/v1/endpoints/   # API uç noktaları
-│   │   ├── core/               # Güvenlik, konfigürasyon
-│   │   ├── db/                 # Veritabanı yönetimi
-│   │   ├── models/             # ORM Modelleri
-│   │   ├── schemas/            # Pydantic şemaları
-│   │   ├── services/           # LLM ve depolama servisleri
-│   │   └── tasks/              # Celery arka plan görevleri
-│   ├── alembic/                # Veritabanı migration'ları
-│   ├── docker-compose.yml
-│   ├── Dockerfile
-│   └── requirements.txt
-└── frontend/
-    ├── css/                    # Stil dosyaları
-    ├── js/                     # JavaScript modülleri
-    └── index.html              # Ana giriş noktası
-```
+Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresini açın.
 
-## 👤 Hazırlayanlar
-* **170423011 - Hayat Diler**
-* **170423035 - Nilay Kuru**
+---
 
-_Bu proje, IEEE Std 1016-2009 standartlarına uygun olarak tasarlanmıştır._
+## Kullanım
+
+### Hesap Oluşturma ve Giriş
+
+1. Uygulama açıldığında giriş/kayıt ekranı karşılar.
+2. **Hesap Oluştur** sekmesinden e-posta ve şifre ile kayıt olun ya da **Google / GitHub** ile hızlı giriş yapın.
+
+### Belge Yükleme
+
+1. Sol menüden **Belge Yükle** sekmesine geçin.
+2. PDF veya TXT dosyalarını sürükleyip bırakın ya da **Dosya Seç** butonunu kullanın.
+3. Başlık, yazar, yıl ve yayın bilgilerini girin; varsayılan atıf formatını seçin.
+4. **Yükle ve İşle** butonuna tıklayın.
+5. Arka planda Celery worker belgeyi işler; LLM özeti ve anahtar kelimeler otomatik oluşturulur.
+
+### Semantik Arama
+
+1. Sol menüden **Semantik Arama** sekmesine geçin.
+2. Doğal dil ifadesiyle sorgu girin (ör. *"iklim değişikliğinin tarımsal verime etkisi"*).
+3. **Normal** veya **Semantik** mod seçin; **Ara** butonuna tıklayın.
+4. Sonuçlar anlam benzerliğine göre sıralanır.
+
+### PDF Görüntüleyici ve Notlar
+
+1. Dashboard ya da arama sonuçlarından bir belgeye tıklayın.
+2. **PDF Görüntüleyici** sekmesinde belge görüntülenir.
+3. Metin seçerek **Vurgula**, **Yorum** veya **Altı Çiz** araçlarıyla not ekleyin.
+4. Sağ panelde AI özeti ve anahtar kelimeler görüntülenir.
+
+### Atıf Oluşturma
+
+1. PDF görüntüleyici sağ panelinde **Atıf Oluştur** butonuna tıklayın.
+2. Açılan modalde APA, MLA, BibTeX veya IEEE formatını seçin.
+3. **Kopyala** ya da **İndir** ile atıfı dışa aktarın.
+
+### Koleksiyonlar ve Raporlar
+
+1. Sol menüden **Koleksiyonlar** sekmesine geçin.
+2. **+ Yeni Koleksiyon** ile tematik bir klasör oluşturun.
+3. Belgelerinizi koleksiyona ekleyin.
+4. **Rapor Oluştur** ile koleksiyondaki belgelerin literatür özeti, trend analizi veya karşılaştırma raporunu LLM'e oluşturturun.
+
+---
+
+## Katkı
+### Hayat Diler
+### Nilay Kuru
+---
+
+## Lisans
+
+Bu proje [MIT Lisansı](https://opensource.org/licenses/MIT) kapsamında lisanslanmıştır.
+
+---
+
+*Hazırlayanlar: **170423011 - Hayat Diler** · **170423035 - Nilay Kuru***  
+*IEEE Std 1016-2009 standartlarına uygun olarak tasarlanmıştır.*
