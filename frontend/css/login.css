@@ -1,0 +1,140 @@
+/* ═══════════════════════════════════════
+   login.css — Giriş / Kayıt ekranı stilleri
+═══════════════════════════════════════ */
+
+#login-screen {
+  align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #F9F7F7 0%, #e8eef8 40%, #d4dff0 100%);
+}
+#login-screen::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 70% at 20% 20%, rgba(63,114,175,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 80% 80%, rgba(17,45,78,0.12) 0%, transparent 50%);
+}
+
+/* ─ Panel ─ */
+.login-panel {
+  position: relative; z-index: 2;
+  display: flex; width: 900px; height: 580px;
+  border-radius: 28px; overflow: hidden;
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border);
+}
+
+/* ─ Sol taraf ─ */
+.login-left {
+  width: 420px; flex-shrink: 0;
+  background: linear-gradient(160deg, var(--deep) 0%, #1e4080 60%, #2a5ba8 100%);
+  padding: 52px 44px; display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden;
+}
+.login-left::before {
+  content: ''; position: absolute; top: -60px; right: -60px;
+  width: 240px; height: 240px; border-radius: 50%;
+  background: rgba(255,255,255,0.05); pointer-events: none;
+}
+.login-left::after {
+  content: ''; position: absolute; bottom: -40px; left: -40px;
+  width: 180px; height: 180px; border-radius: 50%;
+  background: rgba(63,114,175,0.25); pointer-events: none;
+}
+
+/* Brand */
+.brand { position: relative; z-index: 1; }
+.brand-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(63,114,175,0.4);
+}
+.brand-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px; font-weight: 700; color: white;
+  letter-spacing: -0.5px; line-height: 1;
+}
+.brand-tagline {
+  font-size: 13px; color: rgba(255,255,255,0.6);
+  margin-top: 8px; line-height: 1.5; font-weight: 300;
+}
+
+/* Art */
+.login-art { position: relative; z-index: 1; }
+.login-art-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px; color: white; font-weight: 300; line-height: 1.3;
+}
+.login-art-sub { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 10px; }
+.login-dots { display: flex; gap: 6px; margin-top: 20px; }
+.login-dots span {
+  width: 24px; height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,0.3); transition: all .3s;
+}
+.login-dots span:first-child { background: white; width: 36px; }
+
+/* ─ Sağ taraf ─ */
+.login-right {
+  flex: 1;
+  background: var(--glass2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 48px 44px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+
+/* Tabs */
+.login-tabs {
+  display: flex; gap: 0; border-radius: 10px;
+  background: rgba(17,45,78,0.07); padding: 4px; margin-bottom: 32px;
+}
+.login-tab {
+  flex: 1; padding: 9px; border: none; background: transparent;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+  color: var(--muted); cursor: pointer; border-radius: 7px; transition: all .25s;
+}
+.login-tab.active {
+  background: white; color: var(--deep);
+  box-shadow: 0 2px 8px rgba(17,45,78,0.12);
+}
+
+/* Form titles */
+.form-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px; font-weight: 700; color: var(--deep);
+  margin-bottom: 6px;
+}
+.form-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+/* Divider & Social */
+.divider {
+  display: flex; align-items: center; gap: 12px; margin: 16px 0;
+  font-size: 12px; color: var(--muted);
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.social-btns { display: flex; gap: 10px; }
+.btn-social {
+  flex: 1; padding: 11px 8px; border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: rgba(255,255,255,0.6); cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  color: var(--deep); display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all .2s;
+}
+.btn-social:hover { background: white; border-color: var(--primary); transform: translateY(-1px); }
+.social-icon { width: 18px; height: 18px; }
+
+/* Error message */
+.form-error {
+  font-size: 13px; color: var(--danger);
+  background: rgba(224,82,82,0.08); border: 1px solid rgba(224,82,82,0.2);
+  border-radius: 8px; padding: 10px 14px; margin-bottom: 12px;
+  display: none;
+}
+.form-error.show { display: block; }
+
+/* Form visibility */
+.reg-form { display: none; }
+.login-form { display: block; }

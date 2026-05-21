@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArcticDocs — AI Doküman Araştırma Sistemi</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- CSS Katmanları -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css">
+</head>
+<body>
+
+<!-- ─── KAR TANELERİ ─── -->
+<div class="snow-container" id="snow"></div>
+
+<!-- ══════════════════════════════════════
+  LOGIN SCREEN
+══════════════════════════════════════ -->
+<div class="screen active" id="login-screen">
+  <div class="login-panel">
+
+    <!-- Sol: Marka -->
+    <div class="login-left">
+      <div class="brand">
+        <div class="brand-icon">❄</div>
+        <div class="brand-name">ArcticDocs</div>
+        <div class="brand-tagline">Yapay Zeka Destekli<br>Doküman & Araştırma Sistemi</div>
+      </div>
+      <div class="login-art">
+        <div class="login-art-title">Araştırmanızı<br>Güçlendirin</div>
+        <div class="login-art-sub">Semantik arama, akıllı özetleme ve atıf yönetimi tek çatı altında.</div>
+        <div class="login-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <!-- Sağ: Form -->
+    <div class="login-right">
+      <div class="login-tabs">
+        <button class="login-tab active" onclick="switchLoginTab('login')">Giriş Yap</button>
+        <button class="login-tab" onclick="switchLoginTab('register')">Hesap Oluştur</button>
+      </div>
+
+      <!-- GİRİŞ FORMU -->
+      <div class="login-form" id="lform">
+        <div class="form-title">Tekrar Hoş Geldiniz</div>
+        <div class="form-sub">Hesabınıza giriş yapın</div>
+        <div class="form-error" id="login-error"></div>
+        <div class="field">
+          <label>E-posta</label>
+          <input id="login-email" type="email" placeholder="ornek@universite.edu.tr" onkeydown="handleLoginKeydown(event)">
+        </div>
+        <div class="field">
+          <label>Şifre</label>
+          <input id="login-password" type="password" placeholder="••••••••" onkeydown="handleLoginKeydown(event)">
+        </div>
+        <button id="login-btn" class="btn-primary" onclick="handleLogin()">Giriş Yap →</button>
+        <div class="divider">veya</div>
+        <div class="social-btns">
+          <button class="btn-social" onclick="loginWithGoogle()">
+            <svg class="social-icon" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Google ile Giriş
+          </button>
+          <button class="btn-social" onclick="loginWithGithub()">
+            <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+            GitHub ile Giriş
+          </button>
+        </div>
+      </div>
+
+      <!-- KAYIT FORMU -->
+      <div class="reg-form" id="rform">
+        <div class="form-title">Hesap Oluştur</div>
+        <div class="form-sub">Birkaç adımda başlayın</div>
+        <div class="form-error" id="register-error"></div>
+        <div class="field">
+          <label>Ad Soyad</label>
+          <input id="reg-name" type="text" placeholder="Adınız Soyadınız" onkeydown="handleRegisterKeydown(event)">
+        </div>
+        <div class="field">
+          <label>E-posta</label>
+          <input id="reg-email" type="email" placeholder="ornek@universite.edu.tr" onkeydown="handleRegisterKeydown(event)">
+        </div>
+        <div class="field">
+          <label>Şifre</label>
+          <input id="reg-password" type="password" placeholder="En az 8 karakter" onkeydown="handleRegisterKeydown(event)">
+        </div>
+        <button id="register-btn" class="btn-primary" onclick="handleRegister()">Hesap Oluştur →</button>
+        <div class="divider">veya</div>
+        <div class="social-btns">
+          <button class="btn-social" onclick="loginWithGoogle()">
+            <svg class="social-icon" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Google
+          </button>
+          <button class="btn-social" onclick="loginWithGithub()">
+            <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+            GitHub
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+  APP SCREEN
+══════════════════════════════════════ -->
+<div class="screen" id="app-screen">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sb-icon">❄</div>
+      <div class="sb-brand-name">ArcticDocs</div>
+    </div>
+    <div class="sb-nav">
+      <div class="nav-section-title">Ana Menü</div>
+      <div class="nav-item active" onclick="switchTab('dashboard', this)">
+        <span class="nav-icon">🏠</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="switchTab('upload', this)">
+        <span class="nav-icon">📤</span> Belge Yükle
+      </div>
+      <div class="nav-item" onclick="switchTab('search', this)">
+        <span class="nav-icon">🔍</span> Semantik Arama
+      </div>
+      <div class="nav-item" onclick="switchTab('viewer', this)">
+        <span class="nav-icon">📄</span> PDF Görüntüleyici
+      </div>
+      <div class="nav-item" onclick="switchTab('collections', this)">
+        <span class="nav-icon">📁</span> Koleksiyonlar
+      </div>
+      <div class="nav-section-title">Araçlar</div>
+      <div class="nav-item" onclick="openModal('citation-modal')">
+        <span class="nav-icon">📝</span> Atıf Dışa Aktarma
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">⚙️</span> Ayarlar
+      </div>
+      <div class="nav-item" onclick="handleLogout()">
+        <span class="nav-icon">🚪</span> Çıkış Yap
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar" id="sidebar-avatar">?</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-user-name">Yükleniyor…</div>
+          <div class="user-role" id="sidebar-user-role">Araştırmacı</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN AREA -->
+  <div class="main-area">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-title" id="header-title">Dashboard</div>
+      <div class="search-box">
+        <input type="text" id="header-search"
+               placeholder="Belge veya anahtar kelime arayın..."
+               oninput="handleHeaderSearch(this.value)"
+               onkeydown="if(event.key==='Enter'){ switchTab('search',null); document.getElementById('main-search-input').value=this.value; runSearch(); }">
+      </div>
+      <div class="header-actions">
+        <div class="icon-btn" onclick="switchTab('upload', null)" title="Belge Yükle">📤</div>
+        <div class="icon-btn" onclick="openModal('notif-modal')" title="Bildirimler">
+          🔔<span class="notif-dot"></span>
+        </div>
+        <div class="header-avatar" id="header-avatar">?</div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ══ DASHBOARD ══ -->
+      <div class="tab-panel active" id="tab-dashboard">
+        <div class="stats-row">
+          <div class="stat-card">
+            <span class="stat-icon">📄</span>
+            <div class="stat-val" id="stat-docs">—</div>
+            <div class="stat-label">Toplam Belge</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">📁</span>
+            <div class="stat-val" id="stat-collections">—</div>
+            <div class="stat-label">Koleksiyon</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">🔗</span>
+            <div class="stat-val">—</div>
+            <div class="stat-label">Oluşturulan Atıf</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">🤖</span>
+            <div class="stat-val">Gemini</div>
+            <div class="stat-label">Aktif LLM</div>
+            <div class="stat-change" style="color: var(--primary);">Hazır</div>
+          </div>
+        </div>
+
+        <!-- LLM İşleri -->
+        <div class="llm-panel">
+          <div class="llm-header">
+            <div class="pulse-dot"></div>
+            <div class="llm-title">LLM Durumu</div>
+            <div style="margin-left:auto;font-size:12px;color:var(--muted);">Groq · Llama 3.1</div>
+          </div>
+          <div id="llm-status-content" style="font-size:13px;color:var(--muted);padding:8px 0;">
+            Yükleniyor...
+          </div>
+        </div>
+
+        <!-- Son Belgeler -->
+        <div class="section-header">
+          <div class="section-title">Son Belgeler</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-outline" onclick="switchTab('search', null)">Tümünü Ara</button>
+            <button class="btn-sm" onclick="switchTab('upload', null)">+ Belge Yükle</button>
+          </div>
+        </div>
+        <div class="doc-grid" id="recent-docs">
+          <div class="doc-card" style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">
+            Belge yüklemek için <strong>Belge Yükle</strong> sekmesine gidin.
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ UPLOAD ══ -->
+      <div class="tab-panel" id="tab-upload">
+        <div class="section-header" style="margin-bottom:20px">
+          <div class="section-title">Belge Yükle</div>
+        </div>
+        <div class="upload-layout">
+          <div>
+            <input type="file" id="real-file-input" multiple accept=".pdf,.txt"
+                   style="display:none" onchange="handleFileSelect(event)">
+            <div class="drop-zone" id="drop-zone"
+                 ondragover="event.preventDefault(); this.classList.add('dragging')"
+                 ondragleave="this.classList.remove('dragging')"
+                 ondrop="handleDrop(event)">
+              <div class="drop-icon">📂</div>
+              <div class="drop-title">Dosyaları sürükleyin</div>
+              <div class="drop-sub">veya aşağıdaki butona tıklayın</div>
+              <div class="drop-formats">
+                <span class="format-tag">.pdf</span>
+                <span class="format-tag">.txt</span>
+              </div>
+              <button class="browse-btn"
+                      onclick="event.stopPropagation(); document.getElementById('real-file-input').click()">
+                Dosya Seç
+              </button>
+            </div>
+            <div class="file-queue" id="file-queue" style="display:none">
+              <div class="form-section-title">📋 Yükleme Kuyruğu</div>
+              <div id="file-list"></div>
+            </div>
+          </div>
+
+          <div class="upload-form-panel">
+            <div class="form-section-title">📝 Meta Veri</div>
+            <div class="form-grid">
+              <div class="field full">
+                <label>Başlık *</label>
+                <input id="meta-title" type="text" placeholder="Belge başlığını girin">
+              </div>
+              <div class="field">
+                <label>Yazar(lar)</label>
+                <input id="meta-author" type="text" placeholder="Smith, J. et al.">
+              </div>
+              <div class="field">
+                <label>Yayın Yılı</label>
+                <input id="meta-year" type="number" placeholder="2024" min="1900" max="2099">
+              </div>
+              <div class="field full">
+                <label>Yayın / Dergi</label>
+                <input id="meta-publisher" type="text" placeholder="Journal of AI Research">
+              </div>
+            </div>
+            <div class="citation-format">
+              <span class="cf-label">Varsayılan Atıf Formatı</span>
+              <div class="cf-options">
+                <button class="cf-option selected" onclick="selectCF(this)">APA</button>
+                <button class="cf-option" onclick="selectCF(this)">MLA</button>
+                <button class="cf-option" onclick="selectCF(this)">BibTeX</button>
+                <button class="cf-option" onclick="selectCF(this)">IEEE</button>
+              </div>
+            </div>
+            <div class="upload-actions">
+              <button class="btn-outline" onclick="switchTab('dashboard',null)">İptal</button>
+              <button class="btn-primary" style="flex:2;width:auto;padding:12px"
+                      onclick="simulateUpload(this)">📤 Yükle ve İşle</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SEMANTIC SEARCH ══ -->
+      <div class="tab-panel" id="tab-search">
+        <div class="search-screen">
+          <div class="semantic-search-bar">
+            <input type="text" id="main-search-input"
+                   placeholder="Semantik sorgu girin… ör: 'iklim değişikliğinin tarımsal verime etkisi'"
+                   oninput="updateSearch(this.value)"
+                   onkeydown="if(event.key==='Enter') runSearch()">
+            <div class="search-mode-toggle">
+              <button class="mode-btn active" onclick="setMode(this,'normal')">Normal</button>
+              <button class="mode-btn" onclick="setMode(this,'semantic')">Semantik</button>
+            </div>
+            <button class="search-go-btn" onclick="runSearch()">🔍 Ara</button>
+          </div>
+          <div class="filters-row">
+            <span class="filter-label">Filtreler:</span>
+            <div class="filter-chip active" onclick="this.classList.toggle('active')">📅 Tüm Yıllar</div>
+            <div class="filter-chip" onclick="this.classList.toggle('active')">🏷 Anahtar Kelime</div>
+            <div class="filter-chip" onclick="this.classList.toggle('active')">👤 Yazar</div>
+          </div>
+          <div class="search-results" id="search-results">
+            <div class="search-empty">
+              <div class="search-empty-icon">🔍</div>
+              <div class="search-empty-title">Araştırmanızı Başlatın</div>
+              <div class="search-empty-sub">Yukarıdaki alana sorgunuzu girin.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PDF VIEWER ══ -->
+      <div class="tab-panel" id="tab-viewer">
+        <div class="pdf-layout">
+          <div class="pdf-viewer-panel">
+            <div class="pdf-toolbar">
+              <button class="pdf-tool-btn" onclick="changePage(-1)">◀ Önceki</button>
+              <button class="pdf-tool-btn" onclick="changePage(1)">Sonraki ▶</button>
+              <button class="pdf-tool-btn" onclick="changeScale(0.2)">🔍 +</button>
+              <button class="pdf-tool-btn" onclick="changeScale(-0.2)">🔍 −</button>
+              <div class="pdf-page-info" id="pdf-page-info">— / — sayfa</div>
+            </div>
+            <div class="annotation-toolbar">
+              <span class="ann-label">Araçlar:</span>
+              <button class="ann-btn ann-highlight" onclick="saveSelectedAnnotation('#FFFF00')">🖍 Vurgula</button>
+              <button class="ann-btn ann-comment" onclick="saveSelectedAnnotation('#3F72AF')">💬 Yorum</button>
+              <button class="ann-btn ann-underline" onclick="saveSelectedAnnotation('#4caf8f')">__ Altı Çiz</button>
+            </div>
+            <div class="pdf-canvas" id="pdf-canvas">
+              <div style="text-align:center;color:rgba(255,255,255,0.4);padding:60px 20px">
+                <div style="font-size:48px;margin-bottom:16px">📄</div>
+                <div>Aramadan veya Dashboard'dan bir belge seçin</div>
+              </div>
+            </div>
+          </div>
+          <div class="doc-info-panel">
+            <div class="panel-section">
+              <div class="panel-section-title">🤖 AI Özeti</div>
+              <div class="summary-text" id="doc-summary">Bir belge seçildiğinde özet burada görünür.</div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title">🏷 Anahtar Kelimeler</div>
+              <div class="keyword-chips" id="doc-keywords">
+                <div class="keyword-chip" style="opacity:.4">—</div>
+              </div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title">📝 Atıf Dışa Aktar</div>
+              <div class="citation-export-btns">
+                <button class="cite-export-btn primary-cite" onclick="openCitationModal(currentDocId)">📋 Atıf Oluştur</button>
+                <button class="cite-export-btn" onclick="openCitationModal(currentDocId)">📥 BibTeX</button>
+                <button class="cite-export-btn" onclick="openCitationModal(currentDocId)">📄 APA</button>
+                <button class="cite-export-btn" onclick="openCitationModal(currentDocId)">📑 IEEE</button>
+              </div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title">📁 Koleksiyona Ekle</div>
+                <select id="collection-select" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:rgba(255,255,255,0.7);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--deep);outline:none">
+                <option>— Koleksiyon Seçin —</option>
+                </select>
+                <button id="add-to-collection-btn" class="btn-sm" style="width:100%;margin-top:8px">+ Koleksiyona Ekle</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ COLLECTIONS ══ -->
+      <div class="tab-panel" id="tab-collections">
+        <div class="section-header" style="margin-bottom:20px">
+          <div class="section-title">Koleksiyonlar & Raporlar</div>
+          <button class="btn-sm" onclick="openNewCollectionModal()">+ Yeni Koleksiyon</button>
+        </div>
+        <div class="collections-layout">
+          <div>
+            <div class="collections-list">
+              <div class="form-section-title" style="margin-bottom:12px">Koleksiyonlarım</div>
+              <div id="collections-list-items">
+                <div class="text-muted" style="padding:12px">Yükleniyor…</div>
+              </div>
+            </div>
+          </div>
+          <div class="collection-content">
+            <div class="coll-header-actions">
+              <div class="section-title" id="coll-title">Koleksiyon Seçin</div>
+              <div style="margin-left:auto;display:flex;gap:8px">
+                <button class="btn-outline" onclick="switchTab('search',null)">🔍 Belge Ara</button>
+                <button class="btn-sm" onclick="showReportPanel()">📊 Rapor Oluştur</button>
+              </div>
+            </div>
+
+            <!-- BELGE LİSTESİ -->
+            <div class="coll-doc-grid" id="collection-docs-grid">
+              <div class="text-muted" style="padding:20px;text-align:center">Bir koleksiyon seçin.</div>
+            </div>
+
+            <!-- Rapor Paneli -->
+            <div class="report-panel" id="report-panel" style="display:none">
+              <div class="section-header" style="margin-bottom:16px">
+                <div class="form-section-title" style="margin:0;font-size:15px">📊 Rapor Oluştur</div>
+              </div>
+              <div class="report-options">
+                <div class="report-option selected" onclick="selectReport(this)">
+                  <div class="report-option-title">📝 Literatür Özeti</div>
+                  <div class="report-option-desc">Koleksiyondaki belgelerin kapsamlı özeti</div>
+                </div>
+                <div class="report-option" onclick="selectReport(this)">
+                  <div class="report-option-title">📈 Trend Analizi</div>
+                  <div class="report-option-desc">Zaman içindeki araştırma trendleri</div>
+                </div>
+                <div class="report-option" onclick="selectReport(this)">
+                  <div class="report-option-title">🔗 Atıf Ağı</div>
+                  <div class="report-option-desc">Belgeler arası atıf ilişkileri</div>
+                </div>
+                <div class="report-option" onclick="selectReport(this)">
+                  <div class="report-option-title">📊 Karşılaştırma</div>
+                  <div class="report-option-desc">Metodolojik yaklaşımların karşılaştırması</div>
+                </div>
+              </div>
+              <button class="generate-report-btn" onclick="startReport(this)">🤖 Raporu Oluştur</button>
+              <div class="report-progress" id="report-progress">
+                <div class="progress-bar" style="height:8px;margin-bottom:12px">
+                  <div class="progress-fill" id="report-fill" style="width:0%"></div>
+                </div>
+                <div class="report-steps">
+                  <div class="report-step" id="rs-1"><div class="step-icon step-pending">○</div> Belgeler yükleniyor…</div>
+                  <div class="report-step" id="rs-2"><div class="step-icon step-pending">○</div> LLM analizi başlatılıyor…</div>
+                  <div class="report-step" id="rs-3"><div class="step-icon step-pending">○</div> Özetler birleştiriliyor…</div>
+                  <div class="report-step" id="rs-4"><div class="step-icon step-pending">○</div> Rapor oluşturuluyor…</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-area -->
+</div><!-- /app-screen -->
+
+<!-- ══════════════════════════════════════
+  MODALS
+══════════════════════════════════════ -->
+
+<!-- ATİF MODAL -->
+<div class="modal-overlay" id="citation-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📝 Atıf Dışa Aktarma</div>
+      <button class="modal-close" onclick="closeModal('citation-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="citation-tabs">
+        <button class="citation-tab active" onclick="switchCitTab(this,'apa')">APA</button>
+        <button class="citation-tab" onclick="switchCitTab(this,'mla')">MLA</button>
+        <button class="citation-tab" onclick="switchCitTab(this,'bibtex')">BibTeX</button>
+        <button class="citation-tab" onclick="switchCitTab(this,'ieee')">IEEE</button>
+      </div>
+      <div class="citation-content active" id="cit-apa">
+        <div class="citation-box">Belge seçildiğinde atıf burada görünür.</div>
+        <div class="citation-actions">
+          <button class="btn-sm" onclick="copyText('apa')">📋 Kopyala</button>
+          <button class="btn-outline" onclick="downloadCitation('APA')">⬇ İndir</button>
+        </div>
+      </div>
+      <div class="citation-content" id="cit-mla">
+        <div class="citation-box">Yükleniyor…</div>
+        <div class="citation-actions">
+          <button class="btn-sm" onclick="copyText('mla')">📋 Kopyala</button>
+          <button class="btn-outline" onclick="downloadCitation('MLA')">⬇ İndir</button>
+        </div>
+      </div>
+      <div class="citation-content" id="cit-bibtex">
+        <div class="citation-box">Yükleniyor…</div>
+        <div class="citation-actions">
+          <button class="btn-sm" onclick="copyText('bibtex')">📋 Kopyala</button>
+          <button class="btn-outline" onclick="downloadCitation('BibTeX')">⬇ .bib İndir</button>
+        </div>
+      </div>
+      <div class="citation-content" id="cit-ieee">
+        <div class="citation-box">Yükleniyor…</div>
+        <div class="citation-actions">
+          <button class="btn-sm" onclick="copyText('ieee')">📋 Kopyala</button>
+          <button class="btn-outline" onclick="downloadCitation('IEEE')">⬇ İndir</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BİLDİRİM MODAL -->
+<div class="modal-overlay" id="notif-modal">
+  <div class="modal" style="width:440px">
+    <div class="modal-header">
+      <div class="modal-title">🔔 Bildirimler</div>
+      <button class="modal-close" onclick="closeModal('notif-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="notif-list" id="notif-list">
+        <div class="text-muted" style="text-align:center;padding:20px">Bildirim yok.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- YENİ KOLEKSİYON MODAL -->
+<div class="modal-overlay" id="new-collection-modal">
+  <div class="modal" style="width:440px">
+    <div class="modal-header">
+      <div class="modal-title">📁 Yeni Koleksiyon</div>
+      <button class="modal-close" onclick="closeModal('new-collection-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Koleksiyon Adı *</label>
+        <input id="new-coll-name" type="text" placeholder="ör: Makine Öğrenmesi"
+               onkeydown="if(event.key==='Enter') handleCreateCollection()">
+      </div>
+      <div class="field">
+        <label>Açıklama</label>
+        <input id="new-coll-desc" type="text" placeholder="İsteğe bağlı açıklama">
+      </div>
+      <button id="create-coll-btn" class="btn-primary" onclick="handleCreateCollection()">
+        Oluştur
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════
+  JAVASCRIPT (sıra önemli!)
+══════════════════════════════════════ -->
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/upload.js"></script>
+<script src="js/search.js"></script>
+<script src="js/collections.js"></script>
+<script src="js/citation.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,88 @@
+/* ═══════════════════════════════════════
+   dashboard.css — Dashboard, doc cards, LLM status
+═══════════════════════════════════════ */
+
+/* ─── STATS ROW ─── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 16px; margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--glass); backdrop-filter: blur(12px);
+  border-radius: 16px; padding: 20px 22px;
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  position: relative; overflow: hidden;
+}
+.stat-card::after {
+  content: ''; position: absolute; top: -20px; right: -20px;
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(63,114,175,0.08); pointer-events: none;
+}
+.stat-icon { font-size: 22px; margin-bottom: 10px; display: block; }
+.stat-val {
+  font-size: 28px; font-weight: 700; color: var(--deep);
+  font-family: 'Cormorant Garamond', serif;
+}
+.stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; font-weight: 500; }
+.stat-change { font-size: 11px; color: var(--success); margin-top: 6px; font-weight: 500; }
+
+/* ─── LLM STATUS PANEL ─── */
+.llm-panel {
+  background: var(--glass); backdrop-filter: blur(12px);
+  border-radius: 16px; padding: 20px 24px;
+  border: 1px solid var(--border); margin-bottom: 24px;
+}
+.llm-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.llm-title { font-size: 15px; font-weight: 600; color: var(--deep); }
+.llm-jobs { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.llm-job {
+  background: rgba(255,255,255,0.55); border-radius: 12px; padding: 14px;
+  border: 1px solid var(--border);
+}
+.llm-job-name { font-size: 12px; font-weight: 600; color: var(--deep); margin-bottom: 8px; }
+.llm-job-doc {
+  font-size: 11px; color: var(--muted); margin-bottom: 10px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: rgba(63,114,175,0.15); overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width .5s;
+}
+.progress-label {
+  font-size: 11px; color: var(--muted); margin-top: 6px;
+  display: flex; justify-content: space-between;
+}
+
+/* ─── DOCUMENT GRID ─── */
+.doc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 28px; }
+.doc-card {
+  background: var(--glass2); backdrop-filter: blur(12px);
+  border-radius: 16px; padding: 20px;
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  cursor: pointer; transition: all .25s;
+  position: relative; overflow: hidden;
+}
+.doc-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: rgba(63,114,175,0.3); }
+.doc-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+.doc-type-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 6px;
+  background: rgba(63,114,175,0.12); color: var(--primary);
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .5px; margin-bottom: 12px;
+}
+.doc-title { font-size: 15px; font-weight: 600; color: var(--deep); line-height: 1.4; margin-bottom: 8px; }
+.doc-authors { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.doc-meta { display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--muted); }
+.doc-meta-item { display: flex; align-items: center; gap: 4px; }
+.doc-status { margin-left: auto; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.status-done { background: rgba(76,175,143,0.15); color: var(--success); }
+.status-proc { background: rgba(63,114,175,0.12); color: var(--primary); }
+.status-queue { background: rgba(255,193,7,0.15); color: #c89a00; }
