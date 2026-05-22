@@ -64,7 +64,7 @@ JSON:"""
     return []
 
 def generate_trend_analysis(collection_name: str, summaries: list[str]) -> str:
-    combined = "\n\n---\n\n".join([f"Belge {i+1}:\n{s}" for i, s in enumerate(summaries)])
+    combined = "\n\n---\n\n".join(summaries)
     prompt = f"""'{collection_name}' koleksiyonundaki belgeler:
 
 {combined[:6000]}
@@ -87,7 +87,7 @@ RAPOR:"""
 
 
 def generate_citation_network(collection_name: str, summaries: list[str]) -> str:
-    combined = "\n\n---\n\n".join([f"Belge {i+1}:\n{s}" for i, s in enumerate(summaries)])
+    combined = "\n\n---\n\n".join(summaries)
     prompt = f"""'{collection_name}' koleksiyonundaki belgeler:
 
 {combined[:6000]}
@@ -108,7 +108,7 @@ RAPOR:"""
 
 
 def generate_comparison(collection_name: str, summaries: list[str]) -> str:
-    combined = "\n\n---\n\n".join([f"Belge {i+1}:\n{s}" for i, s in enumerate(summaries)])
+    combined = "\n\n---\n\n".join(summaries)
     prompt = f"""'{collection_name}' koleksiyonundaki belgeler:
 
 {combined[:6000]}
@@ -141,9 +141,7 @@ def generate_query_embedding(query: str) -> list[float]:
 
 
 def generate_collection_report(collection_name: str, summaries: list[str]) -> str:
-    combined = "\n\n---\n\n".join(
-        [f"Belge {i+1}:\n{s}" for i, s in enumerate(summaries)]
-    )
+    combined = "\n\n---\n\n".join(summaries)
     prompt = f"""'{collection_name}' koleksiyonuna ait belgeler:
 
 {combined[:6000]}
