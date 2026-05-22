@@ -47,11 +47,17 @@ async function handleLogin() {
 
   setButtonLoading(btn, true, 'Giriş Yap →');
   try {
+    // 1. Login — token otomatik set ediliyor (AuthAPI.login içinde)
     await API.AuthAPI.login(email, password);
 
-    // Kullanıcı bilgisini API'den çek ve kaydet
-    const user = await API.apiFetch('/auth/me');
-    API.Auth.setUser(user);
+    // 2. Token set edildikten sonra /me çağır
+    try {
+      const user = await API.apiFetch('/auth/me');
+      API.Auth.setUser(user);
+    } catch (e) {
+      // /me başarısız olsa bile devam et
+      console.warn('Kullanıcı bilgisi alınamadı:', e);
+    }
 
     goToApp();
   } catch (err) {
