@@ -60,6 +60,7 @@ async def add_document_to_collection(
 @router.post("/{collection_id}/report", response_model=ReportOut, status_code=status.HTTP_202_ACCEPTED)
 async def request_collection_report(
     collection_id: uuid.UUID,
+    report_type: str = "literature",
     db: AsyncSession = Depends(get_db),
     current_user_id: str = Depends(get_current_user_id),
 ):
@@ -74,11 +75,11 @@ async def request_collection_report(
     await db.commit()
     await db.refresh(report)
 
-    # Celery ile asenkron rapor üretimini başlat
     generate_collection_report_task.delay(
         str(report.report_id),
         str(collection_id),
         current_user_id,
+        report_type,
     )
     return report
 

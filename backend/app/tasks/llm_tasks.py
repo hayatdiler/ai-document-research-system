@@ -107,6 +107,9 @@ async def _generate_report(report_id: str, collection_id: str, user_id: str, rep
     from app.models.models import Collection, CollectionReport, Document, JobStatus
     from app.services import llm_service, storage_service
 
+    import logging
+    logging.info(f"Rapor türü: {report_type}")
+
     engine = create_async_engine(settings.DATABASE_URL, pool_pre_ping=True)
     SessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False)
 

@@ -30,10 +30,10 @@ async def semantic_search(
     # pgvector cosine distance sorgusu
     sql = text("""
         SELECT doc_id, title, summary,
-               1 - (embedding_vector <=> :query_vec::vector) AS similarity_score
+               1 - (embedding_vector <=> CAST(:query_vec AS vector)) AS similarity_score
         FROM documents
         WHERE embedding_vector IS NOT NULL
-        ORDER BY embedding_vector <=> :query_vec::vector
+        ORDER BY embedding_vector <=> CAST(:query_vec AS vector)
         LIMIT :top_k
     """)
     result = await db.execute(sql, {"query_vec": vector_str, "top_k": payload.top_k})
