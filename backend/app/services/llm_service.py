@@ -32,8 +32,22 @@ def _get_st_model():
     return _st_model
 
 
+def detect_language(text: str) -> str:
+    """
+    Metnin dilini tahmin eder: 'en' veya 'tr'.
+    Türkçe'ye özgü karakterlerin (ğ ü ş ı ö ç) yoğunluğuna bakar.
+    500 karakterlik örnekte 3'ten fazla Türkçe karakter varsa Türkçe kabul edilir.
+    """
+    sample = text[:500].lower()
+    tr_chars = sum(1 for c in sample if c in 'ğüşıöç')
+    return 'tr' if tr_chars > 2 else 'en'
+
+
 def summarize_document(text: str) -> str:
-    prompt = f"""Aşağıdaki akademik belgeyi Türkçe olarak 3-5 cümleyle özetle.
+    lang = detect_language(text)
+
+    if lang == 'tr':
+        prompt = f"""Aşağıdaki akademik belgeyi Türkçe olarak 3-5 cümleyle özetle.
 Kurallar:
 - Sadece özet metnini yaz, "özet:", "işte özet" gibi başlık ekleme
 - Madde işareti veya numaralı liste kullanma
@@ -43,11 +57,25 @@ BELGE:
 {text[:8000]}
 
 """
+    else:
+        prompt = f"""Summarize the following academic document in 3-5 sentences in English.
+Rules:
+- Write only the summary text, no "Summary:" or "Here is the summary:" prefix
+- No bullet points or numbered lists
+- Cover the document's main findings, methodology, and conclusion
+
+DOCUMENT:
+{text[:8000]}
+
+"""
     return _chat(prompt).strip()
 
 
 def extract_keywords(text: str) -> list[str]:
-    prompt = f"""Aşağıdaki belgeden 5-10 anahtar kelime çıkar.
+    lang = detect_language(text)
+
+    if lang == 'tr':
+        prompt = f"""Aşağıdaki belgeden 5-10 anahtar kelime çıkar.
 Sadece JSON listesi döndür, başka hiçbir şey yazma.
 Örnek: ["yapay zeka", "makine öğrenmesi"]
 
@@ -55,6 +83,16 @@ BELGE:
 {text[:4000]}
 
 JSON:"""
+    else:
+        prompt = f"""Extract 5-10 keywords from the following document.
+Return only a JSON list, nothing else.
+Example: ["machine learning", "neural networks"]
+
+DOCUMENT:
+{text[:4000]}
+
+JSON:"""
+
     raw = _chat(prompt, max_tokens=200)
     try:
         raw = raw.replace("```json", "").replace("```", "").strip()
