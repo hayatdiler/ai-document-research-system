@@ -3,7 +3,8 @@
 ═══════════════════════════════════════ */
 
 let currentMode = 'normal'; // 'normal' | 'semantic'
-let searchDebounceTimer = null;
+let searchDebounceTimer  = null;
+let filterDebounceTimer  = null;
 
 /* ─── Mod seçimi ─── */
 function setMode(btn, mode) {
@@ -39,28 +40,91 @@ function updateSearch(value) {
   }
 }
 
+/* ─── Aktif filtreleri topla ─── */
+function getActiveFilters() {
+  return {
+    yearFrom: parseInt(document.getElementById('filter-year-from')?.value) || null,
+    yearTo:   parseInt(document.getElementById('filter-year-to')?.value)   || null,
+    author:   document.getElementById('filter-author')?.value.trim()       || null,
+  };
+}
+
+function hasActiveFilters(f) {
+  return !!(f.yearFrom || f.yearTo || f.author);
+}
+
+/* ─── Filtre paneli aç/kapat ─── */
+function toggleFilterPanel(type) {
+  const panel = document.getElementById(`fp-${type}`);
+  const chip  = document.getElementById(`fc-${type}`);
+  if (!panel) return;
+  const open = panel.classList.toggle('open');
+  chip?.classList.toggle('active', open);
+  if (open) panel.querySelector('input')?.focus();
+}
+
+/* ─── Filtre girişi değişince (debounced) ─── */
+function onFilterInput() {
+  const f = getActiveFilters();
+  const clearBtn = document.getElementById('filter-clear-btn');
+  if (clearBtn) clearBtn.style.display = hasActiveFilters(f) ? 'flex' : 'none';
+
+  // Chip'lerin görsel durumunu güncelle
+  document.getElementById('fc-year')?.classList.toggle(
+    'filter-chip-set', !!(f.yearFrom || f.yearTo)
+  );
+  document.getElementById('fc-author')?.classList.toggle(
+    'filter-chip-set', !!f.author
+  );
+
+  // Sorgu varsa yeniden ara
+  clearTimeout(filterDebounceTimer);
+  const query = document.getElementById('main-search-input')?.value.trim();
+  if (query) filterDebounceTimer = setTimeout(runSearch, 600);
+}
+
+/* ─── Filtreleri sıfırla ─── */
+function clearFilters() {
+  ['filter-year-from', 'filter-year-to', 'filter-author'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['fp-year', 'fp-author'].forEach(id =>
+    document.getElementById(id)?.classList.remove('open')
+  );
+  ['fc-year', 'fc-author'].forEach(id =>
+    document.getElementById(id)?.classList.remove('active', 'filter-chip-set')
+  );
+  const clearBtn = document.getElementById('filter-clear-btn');
+  if (clearBtn) clearBtn.style.display = 'none';
+
+  const query = document.getElementById('main-search-input')?.value.trim();
+  if (query) runSearch();
+}
+
 /* ─── Ana arama fonksiyonu ─── */
 async function runSearch() {
   const query = document.getElementById('main-search-input')?.value.trim();
   if (!query) { renderEmpty(); return; }
 
   renderLoading();
+  const filters = getActiveFilters();
 
   try {
     let results;
     if (currentMode === 'semantic') {
-      results = await API.SearchAPI.semantic(query, 10);
+      results = await API.SearchAPI.semantic(query, 10, filters);
     } else {
-      results = await API.SearchAPI.keyword(query, 10);
+      results = await API.SearchAPI.keyword(query, 10, filters);
     }
-    renderResults(results, query);
+    renderResults(results, query, filters);
   } catch (err) {
     renderError(err.message);
   }
 }
 
 /* ─── Sonuçları render et ─── */
-function renderResults(results, query) {
+function renderResults(results, query, filters = {}) {
   const container = document.getElementById('search-results');
 
   if (!results || results.length === 0) {
@@ -73,7 +137,17 @@ function renderResults(results, query) {
     return;
   }
 
-  container.innerHTML = results.map(r => {
+  // Aktif filtre özeti
+  const filterTags = [];
+  if (filters.yearFrom || filters.yearTo) {
+    filterTags.push(`📅 ${filters.yearFrom || '…'}–${filters.yearTo || '…'}`);
+  }
+  if (filters.author) filterTags.push(`👤 ${escHtml(filters.author)}`);
+  const filterSummary = filterTags.length
+    ? `<div class="filter-summary">${filterTags.map(t => `<span class="filter-tag-active">${t}</span>`).join('')}</div>`
+    : '';
+
+  container.innerHTML = filterSummary + results.map(r => {
     const score   = Math.round((r.similarity_score || 0) * 100);
     const pct     = Math.min(score, 100);
     const summary = highlight(r.summary || 'Özet henüz oluşturulmadı.', query);

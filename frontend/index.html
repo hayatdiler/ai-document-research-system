@@ -350,9 +350,37 @@
           </div>
           <div class="filters-row">
             <span class="filter-label">Filtreler:</span>
-            <div class="filter-chip active" onclick="this.classList.toggle('active')">📅 Tüm Yıllar</div>
-            <div class="filter-chip" onclick="this.classList.toggle('active')">🏷 Anahtar Kelime</div>
-            <div class="filter-chip" onclick="this.classList.toggle('active')">👤 Yazar</div>
+
+            <!-- Yıl aralığı -->
+            <div class="filter-group">
+              <button class="filter-chip" id="fc-year" onclick="toggleFilterPanel('year')">
+                📅 Yıl Aralığı
+              </button>
+              <div class="filter-panel" id="fp-year">
+                <input class="filter-input" type="number" id="filter-year-from"
+                       placeholder="1900" min="1000" max="9999"
+                       oninput="onFilterInput()">
+                <span class="filter-sep">—</span>
+                <input class="filter-input" type="number" id="filter-year-to"
+                       placeholder="2099" min="1000" max="9999"
+                       oninput="onFilterInput()">
+              </div>
+            </div>
+
+            <!-- Yazar -->
+            <div class="filter-group">
+              <button class="filter-chip" id="fc-author" onclick="toggleFilterPanel('author')">
+                👤 Yazar
+              </button>
+              <div class="filter-panel" id="fp-author">
+                <input class="filter-input filter-input-wide" type="text" id="filter-author"
+                       placeholder="Yazar adı…"
+                       oninput="onFilterInput()">
+              </div>
+            </div>
+
+            <button class="filter-clear-btn" id="filter-clear-btn"
+                    style="display:none" onclick="clearFilters()">✕ Temizle</button>
           </div>
           <div class="search-results" id="search-results">
             <div class="search-empty">

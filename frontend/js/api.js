@@ -137,16 +137,27 @@ const DocumentsAPI = {
    SEARCH
 ════════════════════════════════════════ */
 const SearchAPI = {
-  /** Semantik arama (embedding tabanlı) */
-  semantic: (query, top_k = 10) =>
+  /** Semantik arama — filters: { yearFrom, yearTo, author } */
+  semantic: (query, top_k = 10, filters = {}) =>
     apiFetch('/search/semantic', {
       method: 'POST',
-      body: JSON.stringify({ query, top_k }),
+      body: JSON.stringify({
+        query,
+        top_k,
+        year_from: filters.yearFrom || null,
+        year_to:   filters.yearTo   || null,
+        author:    filters.author   || null,
+      }),
     }),
 
-  /** Anahtar kelime araması (full-text) */
-  keyword: (q, limit = 10) =>
-    apiFetch(`/search/keyword?q=${encodeURIComponent(q)}&limit=${limit}`),
+  /** Anahtar kelime araması — filters: { yearFrom, yearTo, author } */
+  keyword: (q, limit = 10, filters = {}) => {
+    const p = new URLSearchParams({ q, limit });
+    if (filters.yearFrom) p.append('year_from', filters.yearFrom);
+    if (filters.yearTo)   p.append('year_to',   filters.yearTo);
+    if (filters.author)   p.append('author',    filters.author);
+    return apiFetch(`/search/keyword?${p}`);
+  },
 };
 
 /* ════════════════════════════════════════

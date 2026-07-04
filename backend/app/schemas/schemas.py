@@ -69,6 +69,9 @@ class CitationDataIn(BaseModel):
 class SemanticSearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=1000)
     top_k: int = Field(default=10, ge=1, le=50)
+    year_from: int | None = Field(default=None, ge=1000, le=9999)
+    year_to:   int | None = Field(default=None, ge=1000, le=9999)
+    author:    str | None = Field(default=None, max_length=255)
 
 
 class SearchResultItem(BaseModel):
