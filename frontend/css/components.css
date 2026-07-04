@@ -152,6 +152,23 @@
   border: 1px solid rgba(63,114,175,0.2);
 }
 .keyword-chip:hover { background: rgba(63,114,175,0.2); }
+/* ─── Annotation list (sağ panel) ─── */
+.ann-list-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 7px 9px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--border); background: rgba(255,255,255,0.5);
+  transition: all .2s;
+}
+.ann-list-item:hover { background: rgba(63,114,175,0.06); border-color: rgba(63,114,175,0.25); }
+.ann-color-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px;
+}
+.ann-preview {
+  font-size: 12px; color: var(--text); line-height: 1.4;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ann-page-label { font-size: 10px; color: var(--muted); margin-top: 2px; font-weight: 600; }
+
 .citation-export-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .cite-export-btn {
   padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border);

@@ -119,14 +119,24 @@ function downloadCitation(format) {
 ═══════════════════════════════════════ */
 
 let currentDocId = null;
+let _docAnnotations = [];   // mevcut belgenin annotation cache'i
 
 /* ─── Belgeyi viewer'da aç ─── */
 async function loadDocumentInViewer(docId) {
   if (!docId) return;
   currentDocId = docId;
+  _docAnnotations = [];
+
   try {
-    const doc = await API.DocumentsAPI.get(docId);
+    // Belge bilgisi ve annotation'ları paralel çek
+    const [doc, annotations] = await Promise.all([
+      API.DocumentsAPI.get(docId),
+      API.AnnotationsAPI.list(docId).catch(() => []),
+    ]);
+
+    _docAnnotations = annotations || [];
     renderDocumentInfo(doc);
+    renderAnnotationsList(_docAnnotations);
     await renderPdfFrame(null, doc.title, docId);
   } catch (err) {
     showToast(`❌ Belge yüklenemedi: ${err.message}`, 'error');
@@ -299,12 +309,111 @@ async function renderPage(pageNum, pageDiv) {
   await page.render({ canvasContext: canvasEl.getContext('2d'), viewport }).promise;
 
   const textContent = await page.getTextContent();
-  pdfjsLib.renderTextLayer({
+  const renderTask = pdfjsLib.renderTextLayer({
     textContentSource: textContent,
     container: textLayerDiv,
     viewport,
     textDivs: [],
   });
+
+  // Text layer tamamen render edilince annotation'ları uygula
+  try {
+    if (renderTask?.promise) await renderTask.promise;
+  } catch { /* bazı PDF.js sürümlerinde promise yok — ignore */ }
+
+  applyAnnotationsToPage(pageNum, textLayerDiv);
+}
+
+/* ─── Sağ paneldeki annotation listesini render et ─── */
+function renderAnnotationsList(annotations) {
+  const listEl = document.getElementById('doc-annotations-list');
+  if (!listEl) return;
+
+  if (!annotations.length) {
+    listEl.innerHTML = '<div style="font-size:12px;color:var(--muted)">Henüz vurgulama yok.</div>';
+    return;
+  }
+
+  listEl.innerHTML = annotations.map(a => {
+    const pageLabel = a.page_number ? `S.${a.page_number}` : '';
+    const preview   = esc(a.selected_text.slice(0, 55)) + (a.selected_text.length > 55 ? '…' : '');
+    return `
+      <div class="ann-list-item" onclick="scrollToAnnotation('${a.annotation_id}', ${a.page_number || 1})">
+        <span class="ann-color-dot" style="background:${a.color}"></span>
+        <div style="flex:1;min-width:0">
+          <div class="ann-preview">${preview}</div>
+          ${pageLabel ? `<div class="ann-page-label">${pageLabel}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ─── Annotation'a scroll ─── */
+function scrollToAnnotation(annotationId, pageNum) {
+  // Önce o sayfaya git
+  const pageDiv = document.querySelector(`[data-page-num="${pageNum}"]`);
+  if (pageDiv) {
+    pageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Highlight span'ı bul ve flash yap
+    setTimeout(() => {
+      const span = pageDiv.querySelector(`[data-annotation-id="${annotationId}"]`);
+      if (span) {
+        span.style.outline = '2px solid var(--primary)';
+        span.style.outlineOffset = '2px';
+        setTimeout(() => { span.style.outline = ''; }, 1500);
+      }
+    }, 400);
+  }
+}
+
+/* ─── Sayfadaki annotation'ları text layer'a uygula ─── */
+function applyAnnotationsToPage(pageNum, textLayerDiv) {
+  if (!_docAnnotations.length) return;
+
+  // page_number null ise ilk sayfada göster
+  const pageAnns = _docAnnotations.filter(
+    a => a.page_number === pageNum || (!a.page_number && pageNum === 1)
+  );
+
+  for (const ann of pageAnns) {
+    highlightTextInLayer(textLayerDiv, ann);
+  }
+}
+
+/* ─── Text span'larında annotation metnini bul ve vurgula ─── */
+function highlightTextInLayer(textLayerDiv, annotation) {
+  const spans = Array.from(textLayerDiv.querySelectorAll('span'));
+  if (!spans.length) return;
+
+  const searchText = annotation.selected_text.trim().toLowerCase();
+  if (searchText.length < 3) return;
+
+  // Tüm span metinlerini birleştir, konum haritası oluştur
+  let fullText = '';
+  const spanMap = spans.map(span => {
+    const start = fullText.length;
+    fullText += span.textContent;
+    return { span, start, end: fullText.length };
+  });
+
+  // İlk eşleşmeyi bul (max 80 karakter karşılaştır)
+  const needle = searchText.slice(0, 80);
+  const foundIdx = fullText.toLowerCase().indexOf(needle);
+  if (foundIdx === -1) return;
+
+  const foundEnd = foundIdx + needle.length;
+
+  // Eşleşen span'ları vurgula
+  for (const { span, start, end } of spanMap) {
+    if (end > foundIdx && start < foundEnd) {
+      span.style.backgroundColor = annotation.color;
+      span.style.opacity = '0.75';
+      span.style.borderRadius = '2px';
+      span.style.cursor = 'pointer';
+      span.dataset.annotationId = annotation.annotation_id;
+      span.title = `📌 ${annotation.selected_text.slice(0, 80)}`;
+    }
+  }
 }/* ─── Annotation kaydet ─── */
 
 async function saveAnnotation(color = '#FFFF00') {
@@ -349,47 +458,20 @@ async function saveSelectedAnnotation(color) {
   const pageDiv = selection.anchorNode?.parentElement?.closest('[data-page-num]');
   const pageNumber = pageDiv ? parseInt(pageDiv.dataset.pageNum) : null;
 
-  // Görsel vurgulama — API'den önce yap
-// Görsel vurgulama
-const range = selection.getRangeAt(0).cloneRange();
-const span = document.createElement('span');
-span.style.backgroundColor = color;
-span.style.opacity = '0.5';
-span.style.mixBlendMode = 'multiply';
-
-try {
-  range.surroundContents(span);
-} catch(e) {
-  // Çok satırlı seçim — her node'u ayrı vurgula
-  const fragment = range.cloneContents();
-  const spans = [];
-  fragment.querySelectorAll('*').forEach(node => {
-    const s = document.createElement('span');
-    s.style.backgroundColor = color;
-    s.style.opacity = '0.5';
-    spans.push(s);
-  });
-  // Basit fallback: selection'ı işaretle
-  const div = document.createElement('div');
-  div.style.cssText = `
-    position:fixed;
-    background:${color};
-    opacity:0.3;
-    pointer-events:none;
-    z-index:999;
-  `;
-  const rect = range.getBoundingClientRect();
-  div.style.left = rect.left + 'px';
-  div.style.top = rect.top + 'px';
-  div.style.width = rect.width + 'px';
-  div.style.height = rect.height + 'px';
-  document.body.appendChild(div);
-  setTimeout(() => div.remove(), 2000);
-}
-selection.removeAllRanges();
+  selection.removeAllRanges();
 
   try {
-    await API.AnnotationsAPI.create(currentDocId, selectedText, pageNumber, color);
+    const ann = await API.AnnotationsAPI.create(currentDocId, selectedText, pageNumber, color);
+
+    // Cache'e ekle, listeyi ve sayfayı hemen güncelle
+    _docAnnotations.push(ann);
+    renderAnnotationsList(_docAnnotations);
+
+    const targetPage    = pageNumber || 1;
+    const targetPageDiv = document.querySelector(`[data-page-num="${targetPage}"]`);
+    const textLayerDiv  = targetPageDiv?.querySelector('.textLayer');
+    if (textLayerDiv) highlightTextInLayer(textLayerDiv, ann);
+
     showToast('✅ Annotation kaydedildi!');
   } catch (err) {
     showToast(`❌ ${err.message}`, 'error');

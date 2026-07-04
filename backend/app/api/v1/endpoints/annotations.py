@@ -1,7 +1,8 @@
 """Annotation ve threaded yorum endpoint'leri — /api/annotations/ & /api/comments/"""
 import uuid
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user_id, get_db
@@ -9,6 +10,24 @@ from app.models.models import Annotation, Comment
 from app.schemas.schemas import AnnotationCreate, AnnotationOut, CommentCreate, CommentOut
 
 router = APIRouter(tags=["Annotation & Yorum"])
+
+
+@router.get("/annotations", response_model=list[AnnotationOut])
+async def list_annotations(
+    doc_id: uuid.UUID = Query(..., description="Belge ID"),
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Bir belgeye ait tüm annotation'ları döner (sadece giriş yapan kullanıcının)."""
+    result = await db.execute(
+        select(Annotation)
+        .where(
+            Annotation.doc_id == doc_id,
+            Annotation.user_id == uuid.UUID(current_user_id),
+        )
+        .order_by(Annotation.created_at.asc())
+    )
+    return result.scalars().all()
 
 
 @router.post("/annotations", response_model=AnnotationOut, status_code=status.HTTP_201_CREATED)

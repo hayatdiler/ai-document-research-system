@@ -195,6 +195,9 @@ const AnnotationsAPI = {
       method: 'POST',
       body: JSON.stringify({ annotation_id: annotationId, content, parent_comment_id: parentCommentId }),
     }),
+
+  /** Belgeye ait annotation'ları listele */
+  list: (docId) => apiFetch(`/annotations?doc_id=${docId}`),
 };
 
 /* ════════════════════════════════════════
