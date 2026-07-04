@@ -427,7 +427,13 @@
               </div>
             </div>
             <div class="panel-section">
-              <div class="panel-section-title">🤖 AI Özeti</div>
+              <div class="panel-section-title" style="display:flex;align-items:center;justify-content:space-between">
+                <span>🤖 AI Özeti</span>
+                <button class="summary-stream-btn" id="summary-stream-btn"
+                        onclick="requestStreamSummary()" title="Özet oluştur / yenile" style="display:none">
+                  ✨ Oluştur
+                </button>
+              </div>
               <div class="summary-text" id="doc-summary">Bir belge seçildiğinde özet burada görünür.</div>
             </div>
             <div class="panel-section">

@@ -3,7 +3,7 @@ LLM servisi — Groq (ücretsiz, llama-3.1-8b-instant)
 Özetleme, keyword, embedding, atıf, koleksiyon raporu.
 """
 import json
-from groq import Groq
+from groq import Groq, AsyncGroq
 from app.core.config import settings
 
 # Sentence Transformers modelini global olarak cache'le
@@ -43,32 +43,61 @@ def detect_language(text: str) -> str:
     return 'tr' if tr_chars > 2 else 'en'
 
 
-def summarize_document(text: str) -> str:
+def build_summary_prompt(text: str) -> str:
+    """Dile göre özet prompt'u oluşturur. Hem sync hem async yolda kullanılır."""
     lang = detect_language(text)
-
     if lang == 'tr':
-        prompt = f"""Aşağıdaki akademik belgeyi Türkçe olarak 3-5 cümleyle özetle.
-Kurallar:
-- Sadece özet metnini yaz, "özet:", "işte özet" gibi başlık ekleme
-- Madde işareti veya numaralı liste kullanma
-- Belgenin ana bulgularını, yöntemini ve sonucunu kapsa
+        return (
+            "Aşağıdaki akademik belgeyi Türkçe olarak 3-5 cümleyle özetle.\n"
+            "Kurallar:\n"
+            "- Sadece özet metnini yaz, \"özet:\", \"işte özet\" gibi başlık ekleme\n"
+            "- Madde işareti veya numaralı liste kullanma\n"
+            "- Belgenin ana bulgularını, yöntemini ve sonucunu kapsa\n\n"
+            f"BELGE:\n{text[:8000]}\n\n"
+        )
+    return (
+        "Summarize the following academic document in 3-5 sentences in English.\n"
+        "Rules:\n"
+        "- Write only the summary text, no \"Summary:\" prefix\n"
+        "- No bullet points or numbered lists\n"
+        "- Cover the document's main findings, methodology, and conclusion\n\n"
+        f"DOCUMENT:\n{text[:8000]}\n\n"
+    )
 
-BELGE:
-{text[:8000]}
 
-"""
-    else:
-        prompt = f"""Summarize the following academic document in 3-5 sentences in English.
-Rules:
-- Write only the summary text, no "Summary:" or "Here is the summary:" prefix
-- No bullet points or numbered lists
-- Cover the document's main findings, methodology, and conclusion
+def summarize_document(text: str) -> str:
+    return _chat(build_summary_prompt(text)).strip()
 
-DOCUMENT:
-{text[:8000]}
 
-"""
-    return _chat(prompt).strip()
+async def stream_summary(text: str):
+    """
+    Async generator — SSE satırları üretir.
+    Groq'tan gelen token'ları birer birer yield eder.
+    Son token'dan sonra tam özet metnini de döner (caller kaydetmek için).
+
+    Yields: str  (SSE satırları)
+    """
+    import asyncio
+    prompt  = build_summary_prompt(text)
+    client  = AsyncGroq(api_key=settings.GROQ_API_KEY)
+    chunks  = []
+
+    stream = await client.chat.completions.create(
+        model=settings.GROQ_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        stream=True,
+        max_tokens=1000,
+        temperature=0.3,
+    )
+
+    async for chunk in stream:
+        delta = chunk.choices[0].delta.content
+        if delta:
+            chunks.append(delta)
+            yield f"data: {json.dumps({'text': delta})}\n\n"
+
+    full = "".join(chunks).strip()
+    yield f"data: {json.dumps({'done': True, 'full': full})}\n\n"
 
 
 def extract_keywords(text: str) -> list[str]:

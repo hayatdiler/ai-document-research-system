@@ -1,22 +1,22 @@
 """Belge yönetimi endpoint'leri — /api/documents/"""
+import asyncio
+import io
+import json
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
-from sqlalchemy import select
+from fastapi.responses import StreamingResponse
+from sqlalchemy import select, update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user_id, get_db
 from app.models.models import Document, FileType, LLMJob, LLMJobType, JobStatus, ReadingStatus
 from app.schemas.schemas import DocumentOut, ReadingStatusUpdate
 from app.services import storage_service
-from app.tasks.llm_tasks import process_document_task
+from app.tasks.llm_tasks import process_document_task, _extract_text_pypdf, _extract_text_ocr
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-
-
-from fastapi.responses import StreamingResponse
-import io
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -223,6 +223,74 @@ async def update_reading_status(
     await db.commit()
     await db.refresh(doc)
     return doc
+
+
+@router.post("/{doc_id}/summary/stream")
+async def stream_document_summary(
+    doc_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """
+    Belgenin özetini Groq'tan gerçek zamanlı olarak akıtar (SSE).
+    Akış bitince özeti DB'ye kaydeder.
+    """
+    result = await db.execute(select(Document).where(Document.doc_id == doc_id))
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Belge bulunamadı")
+    if str(doc.owner_id) != current_user_id:
+        raise HTTPException(status_code=403, detail="Bu belgeye erişim yetkiniz yok")
+
+    async def generate():
+        from app.services.llm_service import stream_summary
+
+        # Metin çıkarımı (sync → thread pool)
+        try:
+            file_bytes = await asyncio.to_thread(
+                storage_service.download_file, doc.file_path
+            )
+            text = await asyncio.to_thread(_extract_text_pypdf, file_bytes)
+            if len(text.strip()) < 100:
+                text = await asyncio.to_thread(_extract_text_ocr, file_bytes)
+            if not text.strip():
+                text = doc.title
+        except Exception as exc:
+            yield f"data: {json.dumps({'error': str(exc)})}\n\n"
+            return
+
+        yield f"data: {json.dumps({'status': 'streaming'})}\n\n"
+
+        # Groq'tan token'ları akıt
+        full_summary = ""
+        try:
+            async for sse_line in stream_summary(text):
+                yield sse_line
+                # Son chunk'tan tam metni yakala
+                if '"done":' in sse_line:
+                    payload = json.loads(sse_line.removeprefix("data: "))
+                    full_summary = payload.get("full", "")
+        except Exception as exc:
+            yield f"data: {json.dumps({'error': str(exc)})}\n\n"
+            return
+
+        # DB'ye kaydet
+        if full_summary:
+            await db.execute(
+                sa_update(Document)
+                .where(Document.doc_id == doc_id)
+                .values(summary=full_summary)
+            )
+            await db.commit()
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/{doc_id}/reprocess", status_code=status.HTTP_202_ACCEPTED)

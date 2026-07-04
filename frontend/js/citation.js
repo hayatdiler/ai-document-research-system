@@ -151,6 +151,14 @@ async function renderDocumentInfo(doc) {
   // Okuma durumu seçicisini güncelle
   updateReadingStatusUI(doc.reading_status || 'Unread');
 
+  // Özet butonu: özet varsa "Yenile", yoksa "Oluştur"
+  const streamBtn = document.getElementById('summary-stream-btn');
+  if (streamBtn) {
+    streamBtn.style.display = 'inline-flex';
+    streamBtn.textContent   = doc.summary ? '🔄 Yenile' : '✨ Oluştur';
+    streamBtn.disabled      = false;
+  }
+
   if (summaryEl) {
     const raw = doc.summary || 'Özet henüz oluşturulmadı…';
     summaryEl.innerHTML = renderSummary(raw);
@@ -366,6 +374,86 @@ function scrollToAnnotation(annotationId, pageNum) {
         setTimeout(() => { span.style.outline = ''; }, 1500);
       }
     }, 400);
+  }
+}
+
+/* ─── Streaming özet ─── */
+async function requestStreamSummary() {
+  if (!currentDocId) return;
+
+  const summaryEl = document.getElementById('doc-summary');
+  const btn       = document.getElementById('summary-stream-btn');
+  if (!summaryEl || !btn) return;
+
+  // UI: başlıyor
+  btn.disabled      = true;
+  btn.textContent   = '⏳';
+  summaryEl.classList.add('streaming-active');
+  summaryEl.textContent = '';
+
+  try {
+    const token    = API.Auth.getToken();
+    const response = await fetch(
+      `http://localhost:8000/api/documents/${currentDocId}/summary/stream`,
+      { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || `Sunucu hatası: ${response.status}`);
+    }
+
+    const reader  = response.body.getReader();
+    const decoder = new TextDecoder();
+    let   buffer  = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // Son yarım satır → sonraki döngüye taşı
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
+
+        let payload;
+        try { payload = JSON.parse(raw); } catch { continue; }
+
+        if (payload.error) {
+          summaryEl.classList.remove('streaming-active');
+          summaryEl.innerHTML = `<span style="color:var(--danger)">❌ ${esc(payload.error)}</span>`;
+          btn.disabled = false; btn.textContent = '🔄 Yenile';
+          return;
+        }
+
+        if (payload.status === 'streaming') {
+          summaryEl.textContent = '';  // "Hazırlanıyor…" temizle
+          continue;
+        }
+
+        if (payload.text) {
+          // Token'ı karakter karakter ekle
+          summaryEl.textContent += payload.text;
+        }
+
+        if (payload.done) {
+          summaryEl.classList.remove('streaming-active');
+          // Son hali güzel render et
+          summaryEl.innerHTML = renderSummary(summaryEl.textContent);
+          btn.disabled = false; btn.textContent = '🔄 Yenile';
+        }
+      }
+    }
+
+  } catch (err) {
+    summaryEl.classList.remove('streaming-active');
+    summaryEl.innerHTML = `<span style="color:var(--danger)">❌ ${esc(err.message)}</span>`;
+    btn.disabled = false; btn.textContent = '🔄 Yenile';
+    showToast(`❌ ${err.message}`, 'error');
   }
 }
 
