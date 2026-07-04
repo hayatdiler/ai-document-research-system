@@ -35,6 +35,7 @@ const TAB_TITLES = {
   search:      'Semantik Arama',
   viewer:      'PDF Görüntüleyici',
   collections: 'Koleksiyonlar',
+  chat:        'Belgelerle Sohbet',
   settings:    'Ayarlar',
 };
 
@@ -63,6 +64,7 @@ function switchTab(id, navEl) {
   if (id === 'dashboard')   loadDashboardStats();
   if (id === 'collections') loadCollections();
   if (id === 'settings')    loadSettingsPage();
+  if (id === 'chat')        initChatTab();
 }
 
 /* ─── SETTINGS ─── */
@@ -129,6 +131,14 @@ function initKeyboardShortcuts() {
       if (API.Auth.isLoggedIn()) {
         e.preventDefault();
         switchTab('upload', null);
+      }
+    }
+    // Ctrl+Shift+C → sohbet
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+      if (API.Auth.isLoggedIn()) {
+        e.preventDefault();
+        switchTab('chat', null);
+        setTimeout(() => document.getElementById('chat-input')?.focus(), 50);
       }
     }
     // Escape → açık modalı kapat

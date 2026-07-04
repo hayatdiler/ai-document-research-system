@@ -197,6 +197,23 @@ const AnnotationsAPI = {
     }),
 };
 
+/* ════════════════════════════════════════
+   CHAT
+════════════════════════════════════════ */
+const ChatAPI = {
+  /** Belgelerle sohbet — stateless RAG */
+  send: (query, { collectionId = null, docIds = null, history = [] } = {}) =>
+    apiFetch('/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        query,
+        collection_id: collectionId || null,
+        doc_ids: docIds || null,
+        history,
+      }),
+    }),
+};
+
 /* ─── EXPORT ─── */
 window.API = {
   Auth,
@@ -206,5 +223,6 @@ window.API = {
   CollectionsAPI,
   CitationsAPI,
   AnnotationsAPI,
-  apiFetch,  // ← bunu ekle
+  ChatAPI,
+  apiFetch,
 };

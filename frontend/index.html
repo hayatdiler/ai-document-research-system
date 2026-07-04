@@ -161,6 +161,10 @@
       <div class="nav-item" onclick="switchTab('collections', this)">
         <span class="nav-icon">📁</span> Koleksiyonlar
       </div>
+      <div class="nav-item" onclick="switchTab('chat', this)">
+        <span class="nav-icon">💬</span> Belgelerle Sohbet
+        <span class="nav-badge" id="chat-badge" style="display:none">Yeni</span>
+      </div>
       <div class="nav-section-title">Araçlar</div>
       <div class="nav-item" onclick="openModal('citation-modal')">
         <span class="nav-icon">📝</span> Atıf Dışa Aktarma
@@ -483,6 +487,94 @@
         </div>
       </div>
 
+      <!-- ══ CHAT ══ -->
+      <div class="tab-panel" id="tab-chat">
+        <div class="chat-layout">
+
+          <!-- SOL: Bağlam paneli -->
+          <div class="chat-context-panel">
+            <div class="chat-context-title">📚 Bağlam</div>
+            <div class="chat-context-desc">Hangi belgeler hakkında sohbet etmek istiyorsunuz?</div>
+
+            <div class="field" style="margin-top:14px">
+              <label>Mod</label>
+              <select id="chat-mode" onchange="onChatModeChange(this.value)">
+                <option value="all">Tüm belgelerim</option>
+                <option value="collection">Koleksiyon seç</option>
+                <option value="docs">Belge seç</option>
+              </select>
+            </div>
+
+            <div id="chat-collection-select" style="display:none">
+              <div class="field">
+                <label>Koleksiyon</label>
+                <select id="chat-coll-id">
+                  <option value="">Yükleniyor…</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="chat-docs-select" style="display:none">
+              <div class="field">
+                <label>Belgeler</label>
+                <div id="chat-doc-list" class="chat-doc-list"></div>
+              </div>
+            </div>
+
+            <div class="chat-context-info" id="chat-context-info">
+              <span class="pulse-dot" style="background:var(--primary)"></span>
+              <span id="chat-context-label">Tüm belgeleriniz bağlam olarak kullanılır</span>
+            </div>
+
+            <button class="btn-outline" style="width:100%;margin-top:16px" onclick="clearChat()">
+              🗑 Sohbeti Temizle
+            </button>
+          </div>
+
+          <!-- SAĞ: Sohbet alanı -->
+          <div class="chat-main">
+            <div class="chat-messages" id="chat-messages">
+              <div class="chat-welcome">
+                <div class="chat-welcome-icon">🤖</div>
+                <div class="chat-welcome-title">Araştırma Asistanı</div>
+                <div class="chat-welcome-sub">
+                  Belgeleriniz hakkında soru sorun. Yöntemler, bulgular, karşılaştırmalar — her şeyi sorabilirsiniz.
+                </div>
+                <div class="chat-suggestions">
+                  <button class="chat-suggestion" onclick="useSuggestion(this)">Bu belgelerde hangi yöntemler kullanılmış?</button>
+                  <button class="chat-suggestion" onclick="useSuggestion(this)">Ana bulgular nelerdir?</button>
+                  <button class="chat-suggestion" onclick="useSuggestion(this)">Belgeler arasındaki temel farklılıklar neler?</button>
+                  <button class="chat-suggestion" onclick="useSuggestion(this)">Bu çalışmaların sınırlılıkları nelerdir?</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="chat-input-area">
+              <div class="chat-input-wrap">
+                <textarea
+                  id="chat-input"
+                  class="chat-input"
+                  placeholder="Belgeleriniz hakkında bir soru sorun… (Enter: gönder, Shift+Enter: yeni satır)"
+                  rows="1"
+                  onkeydown="handleChatKeydown(event)"
+                  oninput="autoResizeChatInput(this)"
+                ></textarea>
+                <button class="chat-send-btn" id="chat-send-btn" onclick="sendChatMessage()">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
+              </div>
+              <div class="chat-footer-note">
+                Groq · Llama 3.1 · Yanıtlar belgelerinizdeki özetlere dayanır
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- ══ SETTINGS ══ -->
       <div class="tab-panel" id="tab-settings">
         <div class="section-header" style="margin-bottom:24px">
@@ -546,6 +638,10 @@
             <div class="settings-row">
               <div class="settings-label">Belge Yükleme</div>
               <div class="settings-val"><kbd>Ctrl</kbd> + <kbd>U</kbd></div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Sohbet Aç</div>
+              <div class="settings-val"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></div>
             </div>
             <div class="settings-row">
               <div class="settings-label">Modal Kapat</div>
@@ -682,6 +778,7 @@
 <script src="js/search.js"></script>
 <script src="js/collections.js"></script>
 <script src="js/citation.js"></script>
+<script src="js/chat.js"></script>
 
 </body>
 </html>
