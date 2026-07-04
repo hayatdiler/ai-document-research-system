@@ -185,6 +185,18 @@ const CollectionsAPI = {
   /** Rapor durumunu sorgula */
   getReport: (collectionId) =>
     apiFetch(`/collections/${collectionId}/report`),
+
+  /** BibTeX dosyasını indir (blob döner) */
+  downloadBibtex: (collectionId) =>
+    fetch(`http://localhost:8000/api/collections/${collectionId}/export/bibtex`, {
+      headers: { Authorization: `Bearer ${Auth.getToken()}` },
+    }),
+
+  /** Raporu indir — format: 'pdf' | 'docx' */
+  downloadReport: (collectionId, format = 'pdf') =>
+    fetch(`http://localhost:8000/api/collections/${collectionId}/report/download?format=${format}`, {
+      headers: { Authorization: `Bearer ${Auth.getToken()}` },
+    }),
 };
 
 /* ════════════════════════════════════════

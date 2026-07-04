@@ -223,8 +223,21 @@ function pollReportStatus(btn, fill) {
         fill.style.width = '100%';
         completeAllSteps();
         btn.disabled  = false;
-        btn.innerHTML = '✅ Rapor Hazır — İndir';
-        btn.onclick   = () => downloadReport(report.file_path);
+        btn.innerHTML = '✅ Rapor Hazır';
+        btn.onclick   = null;
+
+        // PDF + DOCX indirme butonları
+        const existingDl = document.getElementById('report-dl-btns');
+        if (!existingDl) {
+          const dlGroup = document.createElement('div');
+          dlGroup.id = 'report-dl-btns';
+          dlGroup.style.cssText = 'display:flex;gap:8px;margin-top:12px';
+          dlGroup.innerHTML = `
+            <button class="btn-sm" style="flex:1" onclick="downloadReport('pdf')">📄 PDF İndir</button>
+            <button class="btn-outline" style="flex:1" onclick="downloadReport('docx')">📝 Word İndir</button>
+          `;
+          btn.parentNode.insertBefore(dlGroup, btn.nextSibling);
+        }
         showToast('📊 Rapor başarıyla oluşturuldu!');
       } else if (report.status === 'Failed') {
         clearInterval(reportPollTimer);
@@ -242,24 +255,49 @@ function pollReportStatus(btn, fill) {
   }, 3000);
 }
 
-/* ─── Rapor indir ─── */
-async function downloadReport(filePath) {
+/* ─── Rapor indir (PDF veya DOCX) ─── */
+async function downloadReport(format = 'pdf') {
   if (!activeCollectionId) return;
   try {
-    const token = API.Auth.getToken();
-    const response = await fetch(
-      `http://localhost:8000/api/collections/${activeCollectionId}/report/download`,
-      { headers: { 'Authorization': `Bearer ${token}` } }
-    );
-    if (!response.ok) throw new Error('İndirme başarısız');
+    const response = await API.CollectionsAPI.downloadReport(activeCollectionId, format);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || 'İndirme başarısız');
+    }
     const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `rapor_${activeCollectionId}.pdf`;
+    const url  = URL.createObjectURL(blob);
+    const ext  = format === 'docx' ? 'docx' : 'pdf';
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `rapor_${activeCollectionId}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('📥 Rapor indirildi!');
+    showToast(`📥 Rapor indirildi! (.${ext})`);
+  } catch (err) {
+    showToast(`❌ ${err.message}`, 'error');
+  }
+}
+
+/* ─── BibTeX toplu dışa aktarma ─── */
+async function exportBibtex() {
+  if (!activeCollectionId) {
+    showToast('❌ Önce bir koleksiyon seçin.', 'error');
+    return;
+  }
+  try {
+    const response = await API.CollectionsAPI.downloadBibtex(activeCollectionId);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || 'BibTeX dışa aktarımı başarısız');
+    }
+    const blob = await response.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `koleksiyon_${activeCollectionId}.bib`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('📚 BibTeX dosyası indirildi!');
   } catch (err) {
     showToast(`❌ ${err.message}`, 'error');
   }

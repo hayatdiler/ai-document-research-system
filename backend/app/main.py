@@ -41,6 +41,10 @@ async def lifespan(app: FastAPI):
             "ALTER TABLE documents "
             "ADD COLUMN IF NOT EXISTS reading_status VARCHAR(20) NOT NULL DEFAULT 'Unread';"
         ))
+        await conn.execute(text(
+            "ALTER TABLE collection_reports "
+            "ADD COLUMN IF NOT EXISTS report_text TEXT;"
+        ))
 
     # MinIO bucket kontrolü
     ensure_bucket_exists()

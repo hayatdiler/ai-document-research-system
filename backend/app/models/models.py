@@ -187,7 +187,8 @@ class CollectionReport(Base):
     report_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     collection_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("collections.collection_id", ondelete="CASCADE"))
     generated_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.user_id"))
-    file_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)   # MinIO object key
+    file_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)   # MinIO object key (PDF)
+    report_text: Mapped[str | None] = mapped_column(Text, nullable=True)          # DOCX için ham metin
     status: Mapped[JobStatus] = mapped_column(Enum(JobStatus), default=JobStatus.PENDING)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

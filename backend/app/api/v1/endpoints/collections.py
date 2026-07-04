@@ -157,15 +157,18 @@ async def get_collection_documents(
         for d in docs
     ]
 
+from fastapi import Query as FastAPIQuery
 from fastapi.responses import StreamingResponse
 import io
 
 @router.get("/{collection_id}/report/download")
 async def download_report(
     collection_id: uuid.UUID,
+    fmt: str = FastAPIQuery(default="pdf", alias="format", description="pdf veya docx"),
     db: AsyncSession = Depends(get_db),
     current_user_id: str = Depends(get_current_user_id),
 ):
+    """Koleksiyon raporunu PDF veya DOCX olarak indir."""
     result = await db.execute(
         select(CollectionReport)
         .where(CollectionReport.collection_id == collection_id)
@@ -174,8 +177,36 @@ async def download_report(
         .limit(1)
     )
     report = result.scalar_one_or_none()
-    if not report or not report.file_path:
+    if not report:
         raise HTTPException(status_code=404, detail="Rapor bulunamadı")
+
+    # ── DOCX ──────────────────────────────────────────────────────────────────
+    if fmt == "docx":
+        if not report.report_text:
+            raise HTTPException(
+                status_code=422,
+                detail="Bu rapor DOCX için gerekli ham metni içermiyor. "
+                       "Lütfen raporu yeniden oluşturun.",
+            )
+        col_result = await db.execute(
+            select(Collection).where(Collection.collection_id == collection_id)
+        )
+        col = col_result.scalar_one_or_none()
+        col_name = col.name if col else "Koleksiyon"
+
+        from app.services.export_service import generate_docx
+        docx_bytes = generate_docx(col_name, report.report_text)
+
+        safe_name = col_name.replace(" ", "_")[:30]
+        return StreamingResponse(
+            io.BytesIO(docx_bytes),
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f"attachment; filename=rapor_{safe_name}.docx"},
+        )
+
+    # ── PDF (varsayılan) ──────────────────────────────────────────────────────
+    if not report.file_path:
+        raise HTTPException(status_code=404, detail="PDF dosyası bulunamadı")
 
     from app.services.storage_service import download_file
     file_bytes = download_file(report.file_path)
@@ -183,5 +214,44 @@ async def download_report(
     return StreamingResponse(
         io.BytesIO(file_bytes),
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=rapor.pdf"}
+        headers={"Content-Disposition": "attachment; filename=rapor.pdf"},
+    )
+
+
+@router.get("/{collection_id}/export/bibtex")
+async def export_bibtex(
+    collection_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Koleksiyondaki tüm belgelerin BibTeX atıflarını tek .bib dosyası olarak indir."""
+    col_result = await db.execute(
+        select(Collection).where(
+            Collection.collection_id == collection_id,
+            Collection.owner_id == uuid.UUID(current_user_id),
+        )
+    )
+    col = col_result.scalar_one_or_none()
+    if not col:
+        raise HTTPException(status_code=403, detail="Bu koleksiyona erişim yetkiniz yok")
+
+    doc_result = await db.execute(
+        select(Document)
+        .join(CollectionDocument, CollectionDocument.doc_id == Document.doc_id)
+        .where(CollectionDocument.collection_id == collection_id)
+        .order_by(Document.upload_date.asc())
+    )
+    docs = doc_result.scalars().all()
+
+    if not docs:
+        raise HTTPException(status_code=422, detail="Koleksiyonda belge bulunamadı")
+
+    from app.services.export_service import generate_bibtex
+    bib_content = generate_bibtex(docs)
+
+    safe_name = col.name.replace(" ", "_")[:30]
+    return StreamingResponse(
+        io.BytesIO(bib_content.encode("utf-8")),
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={safe_name}.bib"},
     )

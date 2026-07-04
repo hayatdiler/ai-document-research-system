@@ -248,7 +248,7 @@ async def _generate_report(report_id: str, collection_id: str, user_id: str, rep
             await db.execute(
                 update(CollectionReport)
                 .where(CollectionReport.report_id == uuid.UUID(report_id))
-                .values(status=JobStatus.DONE, file_path=object_name)
+                .values(status=JobStatus.DONE, file_path=object_name, report_text=report_text)
             )
             await db.commit()
 
