@@ -167,8 +167,17 @@ async function loadDashboardStats() {
     if (collEl) collEl.innerHTML = '<span class="stat-skeleton"></span>';
 
     const data = await API.apiFetch('/stats');
-    if (docEl)  { docEl.innerHTML = ''; docEl.textContent  = data.total_documents; }
+    if (docEl)  { docEl.innerHTML  = ''; docEl.textContent  = data.total_documents; }
     if (collEl) { collEl.innerHTML = ''; collEl.textContent = data.total_collections; }
+
+    const unreadEl = document.getElementById('stat-unread');
+    const unreadChangeEl = document.getElementById('stat-unread-change');
+    if (unreadEl) { unreadEl.innerHTML = ''; unreadEl.textContent = data.unread_count ?? 0; }
+    if (unreadChangeEl) {
+      const n = data.unread_count ?? 0;
+      unreadChangeEl.textContent = n > 0 ? `${n} bekliyor` : 'Hepsi okundu ✓';
+      unreadChangeEl.style.color = n > 0 ? 'var(--primary)' : 'var(--success)';
+    }
 
     // LLM durumu
     const llmEl = document.getElementById('llm-status-content');
@@ -214,13 +223,20 @@ function renderRecentDocs(docs) {
     return;
   }
 
+  const READING_STATUS_META = {
+    Unread:   { label: 'Okunmadı',  color: 'var(--muted)',    icon: '📬' },
+    Reading:  { label: 'Okunuyor',  color: 'var(--primary)',  icon: '📖' },
+    Read:     { label: 'Okundu',    color: 'var(--success)',  icon: '✅' },
+    Reviewed: { label: 'İncelendi', color: '#9b59b6',         icon: '🔍' },
+  };
+
   function truncate(str, n) {
     if (!str) return '';
     return str.length > n ? str.slice(0, n) + '…' : str;
   }
 
   grid.innerHTML = docs.map(d => {
-    const status = d.status === 'Done'
+    const llmStatus = d.status === 'Done'
       ? '<div class="doc-status status-done">✓ Hazır</div>'
       : '<div class="doc-status status-proc">⏳ İşleniyor</div>';
     const year   = d.citation_data?.year   || '';
@@ -228,6 +244,9 @@ function renderRecentDocs(docs) {
     const summarySnippet = d.summary
       ? `<div style="font-size:12px;color:var(--muted);line-height:1.5;margin:8px 0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${truncate(d.summary, 120)}</div>`
       : '';
+
+    const rs   = READING_STATUS_META[d.reading_status] || READING_STATUS_META.Unread;
+    const rsBadge = `<span class="reading-badge" style="color:${rs.color}" title="${rs.label}">${rs.icon}</span>`;
 
     const reprocessBtn = d.status !== 'Done'
       ? `<button onclick="event.stopPropagation();reprocessDocument('${d.doc_id}')"
@@ -237,13 +256,16 @@ function renderRecentDocs(docs) {
 
     return `
       <div class="doc-card" onclick="loadDocumentInViewer('${d.doc_id}'); switchTab('viewer', null)">
-        <div class="doc-type-badge">📄 ${d.file_type}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div class="doc-type-badge">📄 ${d.file_type}</div>
+          ${rsBadge}
+        </div>
         <div class="doc-title">${d.title}</div>
         ${author ? `<div class="doc-authors">👤 ${author}</div>` : ''}
         ${summarySnippet}
         <div class="doc-meta">
           ${year ? `<div class="doc-meta-item">📅 ${year}</div>` : ''}
-          ${status}
+          ${llmStatus}
           ${reprocessBtn}
           <button onclick="event.stopPropagation();deleteDocument('${d.doc_id}', this)"
             style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px;padding:0 4px"

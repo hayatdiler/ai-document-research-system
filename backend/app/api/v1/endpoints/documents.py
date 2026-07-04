@@ -6,8 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user_id, get_db
-from app.models.models import Document, FileType, LLMJob, LLMJobType, JobStatus
-from app.schemas.schemas import DocumentOut
+from app.models.models import Document, FileType, LLMJob, LLMJobType, JobStatus, ReadingStatus
+from app.schemas.schemas import DocumentOut, ReadingStatusUpdate
 from app.services import storage_service
 from app.tasks.llm_tasks import process_document_task
 
@@ -195,6 +195,35 @@ async def view_document(
         media_type="application/pdf",
         headers={"Content-Disposition": f"inline; filename={doc.title}.pdf"}
     )
+
+@router.patch("/{doc_id}/reading-status", response_model=DocumentOut)
+async def update_reading_status(
+    doc_id: uuid.UUID,
+    payload: ReadingStatusUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Belgenin okuma durumunu güncelle."""
+    try:
+        new_status = ReadingStatus(payload.status)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Geçersiz durum. Seçenekler: Unread, Reading, Read, Reviewed",
+        )
+
+    result = await db.execute(select(Document).where(Document.doc_id == doc_id))
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Belge bulunamadı")
+    if str(doc.owner_id) != current_user_id:
+        raise HTTPException(status_code=403, detail="Bu belgeye erişim yetkiniz yok")
+
+    doc.reading_status = new_status
+    await db.commit()
+    await db.refresh(doc)
+    return doc
+
 
 @router.post("/{doc_id}/reprocess", status_code=status.HTTP_202_ACCEPTED)
 async def reprocess_document(

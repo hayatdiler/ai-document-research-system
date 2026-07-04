@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 import logging
 
 from app.core.config import settings
@@ -27,6 +28,19 @@ async def lifespan(app: FastAPI):
     # DB tablolarını oluştur (production'da Alembic migration kullanılmalı)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+        # Mevcut tablolara yeni sütunları güvenli ekle (IF NOT EXISTS)
+        await conn.execute(text(
+            "DO $$ BEGIN "
+            "  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'readingstatus') THEN "
+            "    CREATE TYPE readingstatus AS ENUM ('Unread','Reading','Read','Reviewed'); "
+            "  END IF; "
+            "END $$;"
+        ))
+        await conn.execute(text(
+            "ALTER TABLE documents "
+            "ADD COLUMN IF NOT EXISTS reading_status VARCHAR(20) NOT NULL DEFAULT 'Unread';"
+        ))
 
     # MinIO bucket kontrolü
     ensure_bucket_exists()

@@ -224,10 +224,11 @@
             <div class="stat-val" id="stat-collections">—</div>
             <div class="stat-label">Koleksiyon</div>
           </div>
-          <div class="stat-card">
-            <span class="stat-icon">🔗</span>
-            <div class="stat-val">—</div>
-            <div class="stat-label">Oluşturulan Atıf</div>
+          <div class="stat-card" style="cursor:pointer" onclick="switchTab('search',null)" title="Okunmamış belgeleri ara">
+            <span class="stat-icon">📬</span>
+            <div class="stat-val" id="stat-unread">—</div>
+            <div class="stat-label">Okunmamış</div>
+            <div class="stat-change" id="stat-unread-change" style="color:var(--primary)"></div>
           </div>
           <div class="stat-card">
             <span class="stat-icon">🤖</span>
@@ -388,6 +389,15 @@
             </div>
           </div>
           <div class="doc-info-panel">
+            <div class="panel-section">
+              <div class="panel-section-title">📌 Okuma Durumu</div>
+              <div class="reading-status-group" id="reading-status-group">
+                <button class="rs-btn" data-status="Unread"   onclick="setReadingStatus('Unread')">📬 Okunmadı</button>
+                <button class="rs-btn" data-status="Reading"  onclick="setReadingStatus('Reading')">📖 Okunuyor</button>
+                <button class="rs-btn" data-status="Read"     onclick="setReadingStatus('Read')">✅ Okundu</button>
+                <button class="rs-btn" data-status="Reviewed" onclick="setReadingStatus('Reviewed')">🔍 İncelendi</button>
+              </div>
+            </div>
             <div class="panel-section">
               <div class="panel-section-title">🤖 AI Özeti</div>
               <div class="summary-text" id="doc-summary">Bir belge seçildiğinde özet burada görünür.</div>

@@ -51,6 +51,13 @@ class JobStatus(str, enum.Enum):
     FAILED = "Failed"
 
 
+class ReadingStatus(str, enum.Enum):
+    UNREAD    = "Unread"
+    READING   = "Reading"
+    READ      = "Read"
+    REVIEWED  = "Reviewed"
+
+
 # ── Modeller ───────────────────────────────────────────────────────────────────
 
 class User(Base):
@@ -84,6 +91,10 @@ class Document(Base):
     keywords: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
     embedding_vector: Mapped[list[float] | None] = mapped_column(Vector(384), nullable=True)  # all-MiniLM-L6-v2: 384 boyut
     citation_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    reading_status: Mapped[ReadingStatus] = mapped_column(
+        Enum(ReadingStatus), nullable=False, default=ReadingStatus.UNREAD,
+        server_default=ReadingStatus.UNREAD.value,
+    )
 
     # İlişkiler
     owner: Mapped["User"] = relationship("User", back_populates="documents")

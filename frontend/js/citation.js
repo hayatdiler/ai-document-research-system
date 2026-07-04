@@ -148,6 +148,9 @@ async function renderDocumentInfo(doc) {
   const summaryEl = document.getElementById('doc-summary');
   const keywordsEl = document.getElementById('doc-keywords');
 
+  // Okuma durumu seçicisini güncelle
+  updateReadingStatusUI(doc.reading_status || 'Unread');
+
   if (summaryEl) {
     const raw = doc.summary || 'Özet henüz oluşturulmadı…';
     summaryEl.innerHTML = renderSummary(raw);
@@ -363,6 +366,25 @@ function scrollToAnnotation(annotationId, pageNum) {
         setTimeout(() => { span.style.outline = ''; }, 1500);
       }
     }, 400);
+  }
+}
+
+/* ─── Okuma durumu UI ─── */
+function updateReadingStatusUI(status) {
+  document.querySelectorAll('.rs-btn').forEach(btn => {
+    btn.classList.toggle('rs-active', btn.dataset.status === status);
+  });
+}
+
+async function setReadingStatus(status) {
+  if (!currentDocId) return;
+  try {
+    await API.DocumentsAPI.updateReadingStatus(currentDocId, status);
+    updateReadingStatusUI(status);
+    const labels = { Unread: 'Okunmadı', Reading: 'Okunuyor', Read: 'Okundu', Reviewed: 'İncelendi' };
+    showToast(`📌 Durum: ${labels[status] || status}`);
+  } catch (err) {
+    showToast(`❌ ${err.message}`, 'error');
   }
 }
 

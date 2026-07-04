@@ -46,8 +46,13 @@ class DocumentOut(BaseModel):
     summary: str | None
     keywords: list[str] | None
     citation_data: dict | None
+    reading_status: str = "Unread"
 
     model_config = {"from_attributes": True}
+
+
+class ReadingStatusUpdate(BaseModel):
+    status: str  # Unread | Reading | Read | Reviewed
 
 
 class CitationDataIn(BaseModel):

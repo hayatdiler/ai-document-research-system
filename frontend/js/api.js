@@ -124,6 +124,13 @@ const DocumentsAPI = {
 
   /** Geçici indirme URL'i al */
   getDownloadUrl: (docId) => apiFetch(`/documents/${docId}/download-url`),
+
+  /** Okuma durumunu güncelle */
+  updateReadingStatus: (docId, status) =>
+    apiFetch(`/documents/${docId}/reading-status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
 };
 
 /* ════════════════════════════════════════

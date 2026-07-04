@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user_id, get_db
-from app.models.models import Document, Collection, LLMJob, JobStatus
+from app.models.models import Document, Collection, LLMJob, JobStatus, ReadingStatus
 
 router = APIRouter(prefix="/stats", tags=["İstatistikler"])
 
@@ -29,10 +29,17 @@ async def get_stats(
         .where(Document.owner_id == uid)
         .where(LLMJob.status == JobStatus.PENDING)
     )
+    unread_count = await db.scalar(
+        select(func.count())
+        .select_from(Document)
+        .where(Document.owner_id == uid)
+        .where(Document.reading_status == ReadingStatus.UNREAD)
+    )
     return {
-        "total_documents":   doc_count  or 0,
-        "total_collections": coll_count or 0,
-        "total_llm_jobs":    job_count  or 0,
+        "total_documents":   doc_count    or 0,
+        "total_collections": coll_count   or 0,
+        "total_llm_jobs":    job_count    or 0,
+        "unread_count":      unread_count or 0,
     }
 
 
@@ -62,6 +69,7 @@ async def get_recent_documents(
             "summary": d.summary,
             "status": "Done" if d.summary else "Processing",
             "citation_data": d.citation_data,
+            "reading_status": d.reading_status.value if d.reading_status else "Unread",
         }
         for d in docs
     ]
