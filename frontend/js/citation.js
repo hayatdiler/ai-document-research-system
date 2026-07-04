@@ -9,6 +9,38 @@ let pdfScale = 1.2;
 
 let activeCitationDocId = null;
 
+/* ─── HTML escape (XSS önleme) ─── */
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ─── LLM özet metnini güvenli HTML'e çevir ─── */
+function renderSummary(raw) {
+  // LLM'nin eklediği "ÖZET:", "İşte özet:" gibi önekleri temizle
+  const cleaned = raw
+    .replace(/^(özet|özet:|i̇şte özet:?|summary:?)\s*/i, '')
+    .trim();
+
+  return cleaned
+    .split('\n')
+    .map(line => {
+      const t = line.trim();
+      if (!t) return '';
+      // **bold** → <strong>
+      const safe = esc(t).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      if (/^\d+\./.test(t)) return `<div style="margin:6px 0">${safe}</div>`;
+      if (t.startsWith('- ') || t.startsWith('• ')) {
+        return `<div style="margin:4px 0;padding-left:12px">• ${safe.slice(2)}</div>`;
+      }
+      return `<p style="margin:0 0 8px">${safe}</p>`;
+    })
+    .join('');
+}
+
 /* ─── Atıf tab geçişi ─── */
 function switchCitTab(btn, format) {
   btn.closest('.citation-tabs')
@@ -108,25 +140,13 @@ async function renderDocumentInfo(doc) {
 
   if (summaryEl) {
     const raw = doc.summary || 'Özet henüz oluşturulmadı…';
-    const html = raw
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .split('\n')
-      .map(line => {
-        const trimmed = line.trim();
-        if (!trimmed) return '';
-        if (/^\d+\./.test(trimmed)) {
-          return `<div style="margin:6px 0">${trimmed}</div>`;
-        }
-        return `<p style="margin:0 0 8px">${trimmed}</p>`;
-      })
-      .join('');
-    summaryEl.innerHTML = html;
+    summaryEl.innerHTML = renderSummary(raw);
   }
 
   if (keywordsEl && doc.keywords?.length) {
-    keywordsEl.innerHTML = doc.keywords.map(k =>
-      `<div class="keyword-chip">${k}</div>`
-    ).join('');
+    keywordsEl.innerHTML = doc.keywords
+      .map(k => `<div class="keyword-chip">${esc(k)}</div>`)
+      .join('');
   }
 
   // Koleksiyonları yükle

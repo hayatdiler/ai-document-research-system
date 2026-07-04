@@ -34,13 +34,16 @@ def _get_st_model():
 
 def summarize_document(text: str) -> str:
     prompt = f"""Aşağıdaki akademik belgeyi Türkçe olarak 3-5 cümleyle özetle.
-Özet açık, bilgilendirici ve belgenin ana bulgularını yansıtmalıdır.
+Kurallar:
+- Sadece özet metnini yaz, "özet:", "işte özet" gibi başlık ekleme
+- Madde işareti veya numaralı liste kullanma
+- Belgenin ana bulgularını, yöntemini ve sonucunu kapsa
 
 BELGE:
 {text[:8000]}
 
-ÖZET:"""
-    return _chat(prompt)
+"""
+    return _chat(prompt).strip()
 
 
 def extract_keywords(text: str) -> list[str]:
