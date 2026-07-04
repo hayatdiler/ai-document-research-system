@@ -71,6 +71,8 @@ class SearchResultItem(BaseModel):
     title: str
     summary: str | None
     similarity_score: float
+    keywords: list[str] | None = None
+    citation_data: dict | None = None
 
 
 # ── Collection ─────────────────────────────────────────────────────────────────

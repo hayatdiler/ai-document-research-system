@@ -98,7 +98,15 @@
         </div>
         <div class="field">
           <label>Şifre</label>
-          <input id="reg-password" type="password" placeholder="En az 8 karakter" onkeydown="handleRegisterKeydown(event)">
+          <input id="reg-password" type="password" placeholder="En az 8 karakter"
+                 onkeydown="handleRegisterKeydown(event)"
+                 oninput="updatePasswordStrength(this.value)">
+          <div id="pwd-strength" style="margin-top:6px;display:none">
+            <div style="height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+              <div id="pwd-strength-bar" style="height:100%;width:0%;transition:all .3s;border-radius:2px"></div>
+            </div>
+            <div id="pwd-strength-label" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+          </div>
         </div>
         <button id="register-btn" class="btn-primary" onclick="handleRegister()">Hesap Oluştur →</button>
         <div class="divider">veya</div>
@@ -157,7 +165,7 @@
       <div class="nav-item" onclick="openModal('citation-modal')">
         <span class="nav-icon">📝</span> Atıf Dışa Aktarma
       </div>
-      <div class="nav-item">
+      <div class="nav-item" onclick="switchTab('settings', this)">
         <span class="nav-icon">⚙️</span> Ayarlar
       </div>
       <div class="nav-item" onclick="handleLogout()">
@@ -472,6 +480,99 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ══ SETTINGS ══ -->
+      <div class="tab-panel" id="tab-settings">
+        <div class="section-header" style="margin-bottom:24px">
+          <div class="section-title">⚙️ Ayarlar</div>
+        </div>
+        <div style="max-width:680px;display:flex;flex-direction:column;gap:20px">
+
+          <!-- Hesap Bilgileri -->
+          <div class="settings-card">
+            <div class="settings-card-title">👤 Hesap Bilgileri</div>
+            <div class="settings-row">
+              <div class="settings-label">Ad Soyad</div>
+              <div class="settings-val" id="s-fullname">—</div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">E-posta</div>
+              <div class="settings-val" id="s-email">—</div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Rol</div>
+              <div class="settings-val" id="s-role">—</div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Hesap Oluşturma</div>
+              <div class="settings-val" id="s-created">—</div>
+            </div>
+          </div>
+
+          <!-- API & Servis Durumu -->
+          <div class="settings-card">
+            <div class="settings-card-title">🤖 Servis Durumu</div>
+            <div class="settings-row">
+              <div class="settings-label">LLM Sağlayıcı</div>
+              <div class="settings-val"><span class="status-badge status-ok">● Groq</span></div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Model</div>
+              <div class="settings-val" style="font-family:'JetBrains Mono',monospace;font-size:12px">llama-3.1-8b-instant</div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Embedding Modeli</div>
+              <div class="settings-val" style="font-family:'JetBrains Mono',monospace;font-size:12px">all-MiniLM-L6-v2 (384d)</div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Depolama</div>
+              <div class="settings-val"><span class="status-badge status-ok">● MinIO</span></div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Vektör DB</div>
+              <div class="settings-val"><span class="status-badge status-ok">● pgvector</span></div>
+            </div>
+          </div>
+
+          <!-- Klavye Kısayolları -->
+          <div class="settings-card">
+            <div class="settings-card-title">⌨️ Klavye Kısayolları</div>
+            <div class="settings-row">
+              <div class="settings-label">Arama Aç</div>
+              <div class="settings-val"><kbd>Ctrl</kbd> + <kbd>K</kbd></div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Belge Yükleme</div>
+              <div class="settings-val"><kbd>Ctrl</kbd> + <kbd>U</kbd></div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Modal Kapat</div>
+              <div class="settings-val"><kbd>Esc</kbd></div>
+            </div>
+          </div>
+
+          <!-- Hakkında -->
+          <div class="settings-card">
+            <div class="settings-card-title">ℹ️ Hakkında</div>
+            <div class="settings-row">
+              <div class="settings-label">Uygulama</div>
+              <div class="settings-val">ArcticDocs</div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Sürüm</div>
+              <div class="settings-val" style="font-family:'JetBrains Mono',monospace;font-size:12px">1.0.0</div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Backend</div>
+              <div class="settings-val">FastAPI + PostgreSQL + Celery</div>
+            </div>
+          </div>
+
+          <button class="btn-outline" style="width:fit-content;color:var(--danger);border-color:var(--danger)" onclick="handleLogout()">
+            🚪 Oturumu Kapat
+          </button>
         </div>
       </div>
 

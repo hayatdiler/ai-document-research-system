@@ -35,6 +35,7 @@ const TAB_TITLES = {
   search:      'Semantik Arama',
   viewer:      'PDF Görüntüleyici',
   collections: 'Koleksiyonlar',
+  settings:    'Ayarlar',
 };
 
 function switchTab(id, navEl) {
@@ -61,6 +62,18 @@ function switchTab(id, navEl) {
 
   if (id === 'dashboard')   loadDashboardStats();
   if (id === 'collections') loadCollections();
+  if (id === 'settings')    loadSettingsPage();
+}
+
+/* ─── SETTINGS ─── */
+function loadSettingsPage() {
+  const user = API.Auth.getUser();
+  if (!user) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+  set('s-fullname', user.full_name);
+  set('s-email',    user.email);
+  set('s-role',     user.role === 'Admin' ? 'Yönetici' : user.role === 'Viewer' ? 'İzleyici' : 'Araştırmacı');
+  set('s-created',  user.created_at ? new Date(user.created_at).toLocaleDateString('tr-TR') : '—');
 }
 
 /* ─── TOAST ─── */
@@ -90,20 +103,6 @@ function handleHeaderSearch(value) {
   }
 }
 
-/* ─── DASHBOARD STATS (API'den gerçek veri) ─── */
-async function loadDashboardStats() {
-  try {
-    if (!API.Auth.isLoggedIn()) return;
-    const data = await API.apiFetch('/stats');
-    const docEl  = document.getElementById('stat-docs');
-    const collEl = document.getElementById('stat-collections');
-    if (docEl)  docEl.textContent  = data.total_documents;
-    if (collEl) collEl.textContent = data.total_collections;
-  } catch (err) {
-    console.error('Stats yüklenemedi:', err);
-  }
-}
-
 /* ─── MODAL OVERLAY KAPAT ─── */
 
 function initModals() {
@@ -114,30 +113,69 @@ function initModals() {
   });
 }
 
+/* ─── KLAVYE KISAYOLLARI ─── */
+function initKeyboardShortcuts() {
+  document.addEventListener('keydown', e => {
+    // Ctrl+K veya Cmd+K → arama
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      if (API.Auth.isLoggedIn()) {
+        switchTab('search', null);
+        setTimeout(() => document.getElementById('main-search-input')?.focus(), 50);
+      }
+    }
+    // Ctrl+U → yükleme
+    if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+      if (API.Auth.isLoggedIn()) {
+        e.preventDefault();
+        switchTab('upload', null);
+      }
+    }
+    // Escape → açık modalı kapat
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+    }
+  });
+}
+
 /* ─── SAYFA YÜKLENME ─── */
 document.addEventListener('DOMContentLoaded', () => {
   initSnow();
   initModals();
+  initKeyboardShortcuts();
   startAutoRefresh();
 });
 
 async function loadDashboardStats() {
   try {
     if (!API.Auth.isLoggedIn()) return;
-    const data = await API.apiFetch('/stats');
+
+    // Skeleton göster
     const docEl  = document.getElementById('stat-docs');
     const collEl = document.getElementById('stat-collections');
-    if (docEl)  docEl.textContent  = data.total_documents;
-    if (collEl) collEl.textContent = data.total_collections;
+    if (docEl)  docEl.innerHTML  = '<span class="stat-skeleton"></span>';
+    if (collEl) collEl.innerHTML = '<span class="stat-skeleton"></span>';
+
+    const data = await API.apiFetch('/stats');
+    if (docEl)  { docEl.innerHTML = ''; docEl.textContent  = data.total_documents; }
+    if (collEl) { collEl.innerHTML = ''; collEl.textContent = data.total_collections; }
 
     // LLM durumu
     const llmEl = document.getElementById('llm-status-content');
     if (llmEl) {
       const pending = data.total_llm_jobs || 0;
       if (pending > 0) {
-        llmEl.innerHTML = `<span style="color:var(--primary)">⏳ ${pending} belge işlem kuyruğunda</span>`;
+        llmEl.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="pulse-dot" style="background:var(--primary)"></div>
+            <span style="color:var(--primary);font-weight:500">⏳ ${pending} belge işlem kuyruğunda</span>
+          </div>`;
       } else {
-        llmEl.innerHTML = `<span style="color:var(--success)">✅ Tüm belgeler işlendi</span>`;
+        llmEl.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="pulse-dot"></div>
+            <span style="color:var(--success);font-weight:500">✅ Tüm belgeler işlendi — Groq / Llama 3.1 hazır</span>
+          </div>`;
       }
     }
 
@@ -146,6 +184,11 @@ async function loadDashboardStats() {
     renderRecentDocs(recent);
   } catch (err) {
     console.error('Stats yüklenemedi:', err);
+    const grid = document.getElementById('recent-docs');
+    if (grid) grid.innerHTML = `
+      <div class="doc-card" style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">
+        ⚠ İstatistikler yüklenemedi. API bağlantısını kontrol edin.
+      </div>`;
   }
 }
 
@@ -161,29 +204,38 @@ function renderRecentDocs(docs) {
     return;
   }
 
+  function truncate(str, n) {
+    if (!str) return '';
+    return str.length > n ? str.slice(0, n) + '…' : str;
+  }
+
   grid.innerHTML = docs.map(d => {
     const status = d.status === 'Done'
       ? '<div class="doc-status status-done">✓ Hazır</div>'
       : '<div class="doc-status status-proc">⏳ İşleniyor</div>';
-    const year = d.citation_data?.year || '';
+    const year   = d.citation_data?.year   || '';
     const author = d.citation_data?.author || '';
+    const summarySnippet = d.summary
+      ? `<div style="font-size:12px;color:var(--muted);line-height:1.5;margin:8px 0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${truncate(d.summary, 120)}</div>`
+      : '';
 
     const reprocessBtn = d.status !== 'Done'
-      ? `<button onclick="reprocessDocument('${d.doc_id}')"
+      ? `<button onclick="event.stopPropagation();reprocessDocument('${d.doc_id}')"
           style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:12px;padding:0 4px"
           title="Yeniden İşle">🔄</button>`
       : '';
 
     return `
-      <div class="doc-card">
+      <div class="doc-card" onclick="loadDocumentInViewer('${d.doc_id}'); switchTab('viewer', null)">
         <div class="doc-type-badge">📄 ${d.file_type}</div>
-        <div class="doc-title" onclick="loadDocumentInViewer('${d.doc_id}'); switchTab('viewer', null)" style="cursor:pointer">${d.title}</div>
-        <div class="doc-authors">${author}</div>
+        <div class="doc-title">${d.title}</div>
+        ${author ? `<div class="doc-authors">👤 ${author}</div>` : ''}
+        ${summarySnippet}
         <div class="doc-meta">
           ${year ? `<div class="doc-meta-item">📅 ${year}</div>` : ''}
           ${status}
           ${reprocessBtn}
-          <button onclick="deleteDocument('${d.doc_id}', this)"
+          <button onclick="event.stopPropagation();deleteDocument('${d.doc_id}', this)"
             style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px;padding:0 4px"
             title="Belgeyi Sil">🗑</button>
         </div>
@@ -221,5 +273,4 @@ function startAutoRefresh() {
   }, 5000); // 5 saniyede bir
 }
 
-window.apiFetch = apiFetch;
 

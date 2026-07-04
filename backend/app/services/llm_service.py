@@ -17,7 +17,7 @@ def _get_client() -> Groq:
 def _chat(prompt: str, max_tokens: int = 1000) -> str:
     client = _get_client()
     response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
+        model=settings.GROQ_MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=max_tokens,
     )
@@ -55,12 +55,20 @@ JSON:"""
     raw = _chat(prompt, max_tokens=200)
     try:
         raw = raw.replace("```json", "").replace("```", "").strip()
+        # JSON array başlamıyorsa ilk [ ile sonra ] arasını bul
+        start = raw.find('[')
+        end   = raw.rfind(']')
+        if start != -1 and end != -1:
+            raw = raw[start:end+1]
         keywords = json.loads(raw)
         if isinstance(keywords, list):
-            return [str(k) for k in keywords]
-    except json.JSONDecodeError:
-        lines = [l.strip().strip('"-,[]') for l in raw.splitlines()]
-        return [l for l in lines if l]
+            cleaned = [str(k).strip() for k in keywords if str(k).strip() and len(str(k).strip()) > 1]
+            return cleaned[:10]
+    except (json.JSONDecodeError, ValueError):
+        # Fallback: satırları ayrıştır, kısa/boş olanları at
+        lines = [l.strip().strip('"-,[]{}') for l in raw.splitlines()]
+        cleaned = [l for l in lines if len(l) > 2 and not l.startswith('{')]
+        return cleaned[:10]
     return []
 
 def generate_trend_analysis(collection_name: str, summaries: list[str]) -> str:
@@ -130,10 +138,9 @@ RAPOR:"""
 
 def generate_embedding(text: str) -> list[float]:
     model = _get_st_model()
+    # all-MiniLM-L6-v2 outputs 384-dimensional vectors
     embedding = model.encode(text[:1000]).tolist()
-    if len(embedding) < 768:
-        embedding = embedding + [0.0] * (768 - len(embedding))
-    return embedding[:768]
+    return embedding[:384]
 
 
 def generate_query_embedding(query: str) -> list[float]:

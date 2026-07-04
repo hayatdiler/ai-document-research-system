@@ -20,16 +20,16 @@ async def semantic_search(
     current_user_id: str = Depends(get_current_user_id),
 ):
     """
-    Semantik arama: sorgu metni → Gemini embedding → pgvector cosine similarity.
+    Semantik arama: sorgu metni → MiniLM embedding → pgvector cosine similarity.
     En yüksek benzerliğe sahip belgeler döner.
     """
-    # Gemini ile sorgu vektörü üret
+    # MiniLM (sentence-transformers) ile sorgu vektörü üret
     query_vector = generate_query_embedding(payload.query)
     vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
 
     # pgvector cosine distance sorgusu
     sql = text("""
-        SELECT doc_id, title, summary,
+        SELECT doc_id, title, summary, keywords, citation_data,
                1 - (embedding_vector <=> CAST(:query_vec AS vector)) AS similarity_score
         FROM documents
         WHERE embedding_vector IS NOT NULL
@@ -45,6 +45,8 @@ async def semantic_search(
             title=row.title,
             summary=row.summary,
             similarity_score=round(float(row.similarity_score), 4),
+            keywords=row.keywords,
+            citation_data=row.citation_data,
         )
         for row in rows
     ]
@@ -62,7 +64,7 @@ async def keyword_search(
     Başlık, özet ve anahtar kelimeler aranır.
     """
     sql = text("""
-        SELECT doc_id, title, summary,
+        SELECT doc_id, title, summary, keywords, citation_data,
                ts_rank(
                    to_tsvector('turkish', COALESCE(title,'') || ' ' || COALESCE(summary,'')),
                    plainto_tsquery('turkish', :query)
@@ -83,6 +85,8 @@ async def keyword_search(
             title=row.title,
             summary=row.summary,
             similarity_score=round(float(row.similarity_score), 4),
+            keywords=row.keywords,
+            citation_data=row.citation_data,
         )
         for row in rows
     ]

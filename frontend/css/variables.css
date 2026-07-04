@@ -183,6 +183,17 @@ body::before {
 @keyframes pulse { 0%,100% { opacity:1; transform: scale(1); } 50% { opacity:.5; transform: scale(1.2); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ─── SKELETON LOADING ─── */
+.stat-skeleton {
+  display: inline-block; width: 40px; height: 28px; border-radius: 6px;
+  background: linear-gradient(90deg, rgba(63,114,175,0.08) 25%, rgba(63,114,175,0.16) 50%, rgba(63,114,175,0.08) 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ─── RESPONSIVE ─── */
 @media (max-width: 1100px) {
   .doc-grid { grid-template-columns: repeat(2,1fr) !important; }

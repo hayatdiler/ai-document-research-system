@@ -1,6 +1,6 @@
 """
 Tasarım dokümanındaki sınıf diyagramına birebir karşılık gelen ORM modelleri.
-Backend: Python/FastAPI  |  LLM: Gemini  |  Depolama: MinIO
+Backend: Python/FastAPI  |  LLM: Groq (llama-3.1-8b-instant)  |  Depolama: MinIO
 """
 import enum
 import uuid
@@ -82,7 +82,7 @@ class Document(Base):
     upload_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     keywords: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
-    embedding_vector: Mapped[list[float] | None] = mapped_column(Vector(768), nullable=True)  # Gemini embedding boyutu
+    embedding_vector: Mapped[list[float] | None] = mapped_column(Vector(384), nullable=True)  # all-MiniLM-L6-v2: 384 boyut
     citation_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # İlişkiler
@@ -156,7 +156,7 @@ class Comment(Base):
 
 
 class LLMJob(Base):
-    """Asenkron Gemini işleri için kuyruk tablosu."""
+    """Asenkron LLM işleri için kuyruk tablosu."""
     __tablename__ = "llm_jobs"
 
     job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

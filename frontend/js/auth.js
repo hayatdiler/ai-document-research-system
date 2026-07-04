@@ -4,8 +4,9 @@
 
 /* ─── Tab geçişi ─── */
 function switchLoginTab(tab) {
-  document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
+  document.querySelectorAll('.login-tab').forEach(t => {
+    t.classList.toggle('active', t.textContent.includes(tab === 'login' ? 'Giriş' : 'Hesap'));
+  });
 
   const lform = document.getElementById('lform');
   const rform = document.getElementById('rform');
@@ -98,6 +99,37 @@ async function handleRegister() {
   }
 }
 
+/* ─── Şifre gücü göstergesi ─── */
+function updatePasswordStrength(value) {
+  const wrap  = document.getElementById('pwd-strength');
+  const bar   = document.getElementById('pwd-strength-bar');
+  const label = document.getElementById('pwd-strength-label');
+  if (!wrap) return;
+
+  if (!value) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  let score = 0;
+  if (value.length >= 8)  score++;
+  if (value.length >= 12) score++;
+  if (/[A-Z]/.test(value)) score++;
+  if (/[0-9]/.test(value)) score++;
+  if (/[^A-Za-z0-9]/.test(value)) score++;
+
+  const levels = [
+    { pct: '20%', color: '#e05252', text: 'Çok zayıf' },
+    { pct: '40%', color: '#e08052', text: 'Zayıf' },
+    { pct: '60%', color: '#e0c052', text: 'Orta' },
+    { pct: '80%', color: '#4caf8f', text: 'Güçlü' },
+    { pct: '100%', color: '#2e7d62', text: 'Çok güçlü' },
+  ];
+  const lv = levels[Math.min(score, 4)];
+  bar.style.width = lv.pct;
+  bar.style.background = lv.color;
+  label.textContent = lv.text;
+  label.style.color = lv.color;
+}
+
 /* ─── ENTER tuşu desteği ─── */
 function handleLoginKeydown(e) {
   if (e.key === 'Enter') handleLogin();
@@ -107,8 +139,12 @@ function handleRegisterKeydown(e) {
 }
 
 /* ─── OAUTH ─── */
-function loginWithGoogle() { API.AuthAPI.loginWithGoogle(); }
-function loginWithGithub() { API.AuthAPI.loginWithGithub(); }
+function loginWithGoogle() {
+  showToast('Google OAuth henüz yapılandırılmamış. Lütfen e-posta ile giriş yapın.', 'error');
+}
+function loginWithGithub() {
+  showToast('GitHub OAuth henüz yapılandırılmamış. Lütfen e-posta ile giriş yapın.', 'error');
+}
 
 /* ─── ÇIKIŞ ─── */
 function handleLogout() {

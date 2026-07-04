@@ -127,6 +127,8 @@ async def get_document(
     doc = result.scalar_one_or_none()
     if not doc:
         raise HTTPException(status_code=404, detail="Belge bulunamadı")
+    if str(doc.owner_id) != current_user_id:
+        raise HTTPException(status_code=403, detail="Bu belgeye erişim yetkiniz yok")
     return doc
 
 
@@ -168,6 +170,8 @@ async def get_download_url(
     doc = result.scalar_one_or_none()
     if not doc:
         raise HTTPException(status_code=404, detail="Belge bulunamadı")
+    if str(doc.owner_id) != current_user_id:
+        raise HTTPException(status_code=403, detail="Bu belgeye erişim yetkiniz yok")
 
     url = storage_service.get_presigned_url(doc.file_path)
     return {"download_url": url, "expires_in": 3600}

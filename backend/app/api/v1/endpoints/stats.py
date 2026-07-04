@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,11 +15,18 @@ async def get_stats(
     db: AsyncSession = Depends(get_db),
     current_user_id: str = Depends(get_current_user_id),
 ):
-    doc_count  = await db.scalar(select(func.count()).select_from(Document))
-    coll_count = await db.scalar(select(func.count()).select_from(Collection))
+    uid = uuid.UUID(current_user_id)
+    doc_count = await db.scalar(
+        select(func.count()).select_from(Document).where(Document.owner_id == uid)
+    )
+    coll_count = await db.scalar(
+        select(func.count()).select_from(Collection).where(Collection.owner_id == uid)
+    )
     job_count = await db.scalar(
         select(func.count())
         .select_from(LLMJob)
+        .join(Document, Document.doc_id == LLMJob.doc_id)
+        .where(Document.owner_id == uid)
         .where(LLMJob.status == JobStatus.PENDING)
     )
     return {
@@ -35,8 +44,10 @@ async def get_recent_documents(
     from sqlalchemy import select
     from app.models.models import Document
 
+    uid = uuid.UUID(current_user_id)
     result = await db.execute(
         select(Document)
+        .where(Document.owner_id == uid)
         .order_by(Document.upload_date.desc())
         .limit(6)
     )

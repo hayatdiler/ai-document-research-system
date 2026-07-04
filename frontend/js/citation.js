@@ -162,14 +162,21 @@ async function loadCollectionDropdown(docId) {
   }
 }
 
-/* ─── PDF iframe ile göster ─── */
+/* ─── PDF iframe ile göster (lazy loading) ─── */
+let _pdfObserver = null;
+
 async function renderPdfFrame(downloadUrl, title, docId) {
   const canvas = document.querySelector('.pdf-canvas');
   if (!canvas) return;
 
   canvas.innerHTML = `
-    <div id="pdf-container" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px;">
+    <div style="text-align:center;padding:40px;color:rgba(255,255,255,0.5)">
+      <div style="font-size:32px;margin-bottom:12px">⏳</div>
+      <div>PDF yükleniyor…</div>
     </div>`;
+
+  // Önceki IntersectionObserver'ı temizle
+  if (_pdfObserver) { _pdfObserver.disconnect(); _pdfObserver = null; }
 
   try {
     const token = API.Auth.getToken();
@@ -181,52 +188,95 @@ async function renderPdfFrame(downloadUrl, title, docId) {
 
     const arrayBuffer = await response.arrayBuffer();
 
-    // pdf.js worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
     pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     totalPages = pdfDoc.numPages;
 
-    // Sayfa bilgisini güncelle
     const pageInfo = document.getElementById('pdf-page-info');
     if (pageInfo) pageInfo.textContent = `1 / ${totalPages} sayfa`;
 
-    // Tüm sayfaları render et
+    canvas.innerHTML = `<div id="pdf-container" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px;"></div>`;
     const container = document.getElementById('pdf-container');
+
+    // Placeholder divler oluştur — IntersectionObserver ile lazy render
+    const dpr = window.devicePixelRatio || 1;
+    const placeholderViewport = (await pdfDoc.getPage(1)).getViewport({ scale: pdfScale * dpr });
+    const estW = placeholderViewport.width / dpr;
+    const estH = placeholderViewport.height / dpr;
+
     for (let i = 1; i <= totalPages; i++) {
-      await renderPage(i, container, docId);
+      const placeholder = document.createElement('div');
+      placeholder.dataset.pageNum = i;
+      placeholder.dataset.rendered = 'false';
+      placeholder.style.cssText = `width:${estW}px;height:${estH}px;background:rgba(255,255,255,0.05);border-radius:4px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.2);font-size:12px;`;
+      placeholder.textContent = `Sayfa ${i}`;
+      container.appendChild(placeholder);
     }
+
+    // İlk sayfayı hemen render et
+    await renderPage(1, container.querySelector('[data-page-num="1"]'));
+
+    // Geri kalanlar için lazy loading
+    _pdfObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const div = entry.target;
+          if (div.dataset.rendered === 'false') {
+            div.dataset.rendered = 'true';
+            renderPage(parseInt(div.dataset.pageNum), div);
+            _pdfObserver.unobserve(div);
+          }
+        }
+      });
+    }, { root: canvas, rootMargin: '200px' });
+
+    container.querySelectorAll('[data-page-num]').forEach(el => {
+      if (el.dataset.pageNum !== '1') _pdfObserver.observe(el);
+    });
+
+    // Sayfa scroll takibi
+    canvas.addEventListener('scroll', () => {
+      const visible = container.querySelectorAll('[data-page-num]');
+      let closest = 1;
+      for (const el of visible) {
+        const rect = el.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        if (rect.top >= canvasRect.top - 10) { closest = parseInt(el.dataset.pageNum); break; }
+      }
+      currentPage = closest;
+      if (pageInfo) pageInfo.textContent = `${currentPage} / ${totalPages} sayfa`;
+    }, { passive: true });
 
   } catch (err) {
     canvas.innerHTML = `<div style="text-align:center;color:rgba(255,100,100,0.8);padding:40px">❌ ${err.message}</div>`;
   }
 }
 
-async function renderPage(pageNum, container, docId) {
-  const page = await pdfDoc.getPage(pageNum);
+async function renderPage(pageNum, pageDiv) {
+  if (!pdfDoc || !pageDiv) return;
 
+  const page = await pdfDoc.getPage(pageNum);
   const dpr = window.devicePixelRatio || 1;
   const viewport = page.getViewport({ scale: pdfScale * dpr });
 
-  const pageDiv = document.createElement('div');
+  // Placeholder'ı gerçek içerikle değiştir
+  pageDiv.innerHTML = '';
   pageDiv.style.cssText = `position:relative;background:white;border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,0.4);margin-bottom:8px;`;
-  pageDiv.dataset.pageNum = pageNum;
 
-  const canvas = document.createElement('canvas');
-  canvas.width  = viewport.width;
-  canvas.height = viewport.height;
-  // Görsel boyutu DPR'a göre küçült
-  canvas.style.cssText = `display:block;width:${viewport.width / dpr}px;height:${viewport.height / dpr}px;`;
+  const canvasEl = document.createElement('canvas');
+  canvasEl.width  = viewport.width;
+  canvasEl.height = viewport.height;
+  canvasEl.style.cssText = `display:block;width:${viewport.width / dpr}px;height:${viewport.height / dpr}px;`;
 
   const textLayerDiv = document.createElement('div');
   textLayerDiv.className = 'textLayer';
   textLayerDiv.style.cssText = `position:absolute;top:0;left:0;width:${viewport.width / dpr}px;height:${viewport.height / dpr}px;--scale-factor:${pdfScale};`;
 
-  pageDiv.appendChild(canvas);
+  pageDiv.appendChild(canvasEl);
   pageDiv.appendChild(textLayerDiv);
-  container.appendChild(pageDiv);
 
-  await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+  await page.render({ canvasContext: canvasEl.getContext('2d'), viewport }).promise;
 
   const textContent = await page.getTextContent();
   pdfjsLib.renderTextLayer({
@@ -343,15 +393,10 @@ function changePage(delta) {
   if (pageInfo) pageInfo.textContent = `${currentPage} / ${totalPages} sayfa`;
 }
 
-function changeScale(delta) {
+async function changeScale(delta) {
   if (!pdfDoc) return;
   pdfScale = Math.min(Math.max(pdfScale + delta, 0.5), 3.0);
 
-  // PDF'i yeniden render et
-  const container = document.getElementById('pdf-container');
-  if (container) container.innerHTML = '';
-
-  for (let i = 1; i <= totalPages; i++) {
-    renderPage(i, container, currentDocId);
-  }
+  // Mevcut sayfadan yeniden başlat
+  if (currentDocId) await renderPdfFrame(null, null, currentDocId);
 }

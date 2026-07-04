@@ -52,6 +52,24 @@ async def add_document_to_collection(
     current_user_id: str = Depends(get_current_user_id),
 ):
     """Koleksiyona belge ekle."""
+    col_result = await db.execute(
+        select(Collection).where(
+            Collection.collection_id == collection_id,
+            Collection.owner_id == uuid.UUID(current_user_id),
+        )
+    )
+    if not col_result.scalar_one_or_none():
+        raise HTTPException(status_code=403, detail="Bu koleksiyona erişim yetkiniz yok")
+
+    doc_result = await db.execute(
+        select(Document).where(
+            Document.doc_id == doc_id,
+            Document.owner_id == uuid.UUID(current_user_id),
+        )
+    )
+    if not doc_result.scalar_one_or_none():
+        raise HTTPException(status_code=403, detail="Bu belgeye erişim yetkiniz yok")
+
     link = CollectionDocument(collection_id=collection_id, doc_id=doc_id)
     db.add(link)
     await db.commit()
@@ -110,6 +128,15 @@ async def get_collection_documents(
 ):
     from app.models.models import CollectionDocument
     from app.schemas.schemas import DocumentOut
+
+    col_result = await db.execute(
+        select(Collection).where(
+            Collection.collection_id == collection_id,
+            Collection.owner_id == uuid.UUID(current_user_id),
+        )
+    )
+    if not col_result.scalar_one_or_none():
+        raise HTTPException(status_code=403, detail="Bu koleksiyona erişim yetkiniz yok")
 
     result = await db.execute(
         select(Document)

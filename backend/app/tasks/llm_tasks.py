@@ -6,11 +6,14 @@ Belge yüklendiğinde tetiklenen LLM pipeline:
   3. Anahtar kelime çıkar
   4. Embedding üret ve pgvector'e kaydet
 """
+import logging
 import uuid
 
 from celery import Celery
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 celery_app = Celery("docai", broker=settings.REDIS_URL, backend=settings.REDIS_URL)
 celery_app.conf.task_serializer = "json"
@@ -107,8 +110,7 @@ async def _generate_report(report_id: str, collection_id: str, user_id: str, rep
     from app.models.models import Collection, CollectionReport, Document, JobStatus
     from app.services import llm_service, storage_service
 
-    import logging
-    logging.info(f"Rapor türü: {report_type}")
+    logger.info(f"Rapor üretimi başladı: tip={report_type}, koleksiyon={collection_id}")
 
     engine = create_async_engine(settings.DATABASE_URL, pool_pre_ping=True)
     SessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False)

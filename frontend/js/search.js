@@ -68,24 +68,38 @@ function renderResults(results, query) {
       <div class="search-empty">
         <div class="search-empty-icon">📂</div>
         <div class="search-empty-title">Sonuç Bulunamadı</div>
-        <div class="search-empty-sub">"${query}" için sonuç yok. Farklı kelimeler deneyin.</div>
+        <div class="search-empty-sub">"${escHtml(query)}" için sonuç yok. Farklı kelimeler deneyin.</div>
       </div>`;
     return;
   }
 
   container.innerHTML = results.map(r => {
-    const score    = Math.round((r.similarity_score || 0) * 100);
-    const summary  = highlight(r.summary || 'Özet henüz oluşturulmadı.', query);
+    const score   = Math.round((r.similarity_score || 0) * 100);
+    const pct     = Math.min(score, 100);
+    const summary = highlight(r.summary || 'Özet henüz oluşturulmadı.', query);
+    const author  = r.citation_data?.author ? `<span>👤 ${escHtml(r.citation_data.author)}</span>` : '';
+    const year    = r.citation_data?.year   ? `<span>📅 ${r.citation_data.year}</span>` : '';
+    const keywords = r.keywords?.length
+      ? r.keywords.slice(0,4).map(k => `<span class="result-tag">${escHtml(k)}</span>`).join('')
+      : '';
+
+    const scoreColor = pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--primary)' : 'var(--muted)';
 
     return `
       <div class="search-result-card" onclick="openDocument('${r.doc_id}')">
-        <div class="relevance-score">
-          <div class="score-val">${score}</div>
+        <div class="relevance-score" style="background:linear-gradient(135deg,${scoreColor},var(--deep))">
+          <div class="score-val">${pct}</div>
           <div class="score-label">skor</div>
         </div>
         <div class="result-content">
           <div class="result-title">${escHtml(r.title)}</div>
+          ${(author || year) ? `<div class="result-authors" style="display:flex;gap:14px;font-size:12px;color:var(--muted);margin-bottom:6px">${author}${year}</div>` : ''}
           <div class="result-snippet">${summary}</div>
+          ${keywords ? `<div class="result-tags" style="margin-top:8px">${keywords}</div>` : ''}
+        </div>
+        <div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;padding-left:8px" onclick="event.stopPropagation()">
+          <button onclick="openDocument('${r.doc_id}')" class="result-action-btn" title="PDF'i Aç">📄</button>
+          <button onclick="openDocumentActions(event,'${r.doc_id}')" class="result-action-btn" title="Atıf Oluştur">📝</button>
         </div>
       </div>`;
   }).join('');
@@ -124,9 +138,15 @@ function renderError(msg) {
 
 /* ─── Belge aç ─── */
 function openDocument(docId) {
-  // Viewer tab'ına geç ve belgeyi yükle
   switchTab('viewer', null);
   loadDocumentInViewer(docId);
+}
+
+/* ─── Sağ tık menüsü yerine Card action butonları ─── */
+function openDocumentActions(event, docId) {
+  event.stopPropagation();
+  // Atıf modalını aç
+  openCitationModal(docId);
 }
 
 /* ─── Yardımcılar ─── */
