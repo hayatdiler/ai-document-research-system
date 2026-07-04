@@ -247,6 +247,29 @@ const ChatAPI = {
     }),
 };
 
+/* ════════════════════════════════════════
+   SHARE
+════════════════════════════════════════ */
+const ShareAPI = {
+  /** Paylaşım linki oluştur veya mevcut olanı döndür */
+  create: (collectionId, expiresDays = null) => {
+    const qs = expiresDays ? `?expires_days=${expiresDays}` : '';
+    return apiFetch(`/collections/${collectionId}/share${qs}`, { method: 'POST' });
+  },
+
+  /** Paylaşım linkini iptal et */
+  revoke: (collectionId) =>
+    apiFetch(`/collections/${collectionId}/share`, { method: 'DELETE' }),
+
+  /** Public: giriş gerektirmez */
+  getShared: (token) =>
+    fetch(`${API_BASE}/shared/${token}`).then(async r => {
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.detail || `Hata: ${r.status}`);
+      return d;
+    }),
+};
+
 /* ─── EXPORT ─── */
 window.API = {
   Auth,
@@ -257,5 +280,6 @@ window.API = {
   CitationsAPI,
   AnnotationsAPI,
   ChatAPI,
+  ShareAPI,
   apiFetch,
 };

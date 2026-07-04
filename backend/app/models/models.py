@@ -181,6 +181,19 @@ class LLMJob(Base):
     document: Mapped["Document"] = relationship("Document", back_populates="llm_jobs")
 
 
+class CollectionShare(Base):
+    """Koleksiyon paylaşım linki — public, read-only erişim."""
+    __tablename__ = "collection_shares"
+
+    share_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    collection_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("collections.collection_id", ondelete="CASCADE"))
+    token: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.user_id"))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CollectionReport(Base):
     __tablename__ = "collection_reports"
 

@@ -14,7 +14,7 @@ import logging
 from app.core.config import settings
 from app.db.session import engine, Base
 from app.services.storage_service import ensure_bucket_exists
-from app.api.v1.endpoints import admin, annotations, auth, chat, citations, collections, documents, search, stats
+from app.api.v1.endpoints import admin, annotations, auth, chat, citations, collections, documents, search, share, stats
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -64,7 +64,7 @@ app = FastAPI(
 # CORS — frontend ile iletişim için
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8000"],
+    allow_origins=["http://localhost:3000", "http://localhost:8000", "http://localhost:5500", "null"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
@@ -106,6 +106,7 @@ app.include_router(citations.router, prefix=API_PREFIX)
 app.include_router(admin.router, prefix=API_PREFIX)
 app.include_router(stats.router, prefix=API_PREFIX)
 app.include_router(chat.router, prefix=API_PREFIX)
+app.include_router(share.router, prefix=API_PREFIX)
 
 @app.get("/health", tags=["Sistem"])
 async def health_check():

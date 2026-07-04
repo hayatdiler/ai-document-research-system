@@ -134,6 +134,25 @@
 </div>
 
 <!-- ══════════════════════════════════════
+  SHARED COLLECTION SCREEN (public, no auth)
+══════════════════════════════════════ -->
+<div class="screen" id="shared-screen">
+  <div class="shared-layout">
+    <div class="shared-header">
+      <div class="brand" style="flex-direction:row;align-items:center;gap:12px;justify-content:flex-start">
+        <div class="brand-icon" style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--deep));display:flex;align-items:center;justify-content:center;font-size:16px">❄</div>
+        <div class="brand-name" style="font-size:20px;font-weight:700;color:var(--deep)">ArcticDocs</div>
+      </div>
+      <div class="shared-badge">👁 Paylaşılan Koleksiyon</div>
+    </div>
+
+    <div id="shared-body">
+      <div style="text-align:center;padding:60px;color:var(--muted)">⏳ Yükleniyor…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
   APP SCREEN
 ══════════════════════════════════════ -->
 <div class="screen" id="app-screen">
@@ -489,6 +508,7 @@
               <div style="margin-left:auto;display:flex;gap:8px">
                 <button class="btn-outline" onclick="switchTab('search',null)">🔍 Belge Ara</button>
                 <button class="btn-outline" onclick="exportBibtex()" title="Koleksiyonu .bib olarak indir">📚 BibTeX</button>
+                <button class="btn-outline" onclick="openShareModal()" title="Paylaşım linki oluştur">🔗 Paylaş</button>
                 <button class="btn-sm" onclick="showReportPanel()">📊 Rapor Oluştur</button>
               </div>
             </div>
@@ -816,6 +836,38 @@
   </div>
 </div>
 
+<!-- PAYLAŞIM MODAL -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal" style="width:480px">
+    <div class="modal-header">
+      <div class="modal-title">🔗 Koleksiyonu Paylaş</div>
+      <button class="modal-close" onclick="closeModal('share-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="share-loading" style="text-align:center;padding:20px;color:var(--muted)">
+        ⏳ Paylaşım linki oluşturuluyor…
+      </div>
+      <div id="share-content" style="display:none">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+          Bu linke sahip herkes koleksiyonu <strong>okuyabilir</strong> (giriş gerekmez).
+          Düzenleme veya silme yapamaz.
+        </p>
+        <div class="share-link-box">
+          <input id="share-link-input" type="text" readonly class="share-link-input">
+          <button class="btn-sm" onclick="copyShareLink()">📋 Kopyala</button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:10px" id="share-expires-label"></div>
+        <div style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <button class="btn-outline" style="color:var(--danger);border-color:var(--danger);flex:1"
+                  onclick="revokeShareLink()">🗑 Linki İptal Et</button>
+          <button class="btn-sm" style="flex:2" onclick="closeModal('share-modal')">Tamam</button>
+        </div>
+      </div>
+      <div id="share-error" style="display:none;color:var(--danger);font-size:13px;padding:12px"></div>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -830,6 +882,7 @@
 <script src="js/collections.js"></script>
 <script src="js/citation.js"></script>
 <script src="js/chat.js"></script>
+<script src="js/share.js"></script>
 
 </body>
 </html>
