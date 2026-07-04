@@ -1,6 +1,6 @@
 """
 Yapay Zeka Destekli Doküman ve Araştırma Yönetim Sistemi
-Backend: Python 3.11 + FastAPI | LLM: Google Gemini | Depolama: MinIO
+Backend: Python 3.11 + FastAPI | LLM: Groq (Llama 3.1) | Depolama: MinIO
 """
 from contextlib import asynccontextmanager
 
