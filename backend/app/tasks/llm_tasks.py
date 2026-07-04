@@ -26,8 +26,54 @@ def process_document_task(self, doc_id: str, file_path: str, title: str):
     asyncio.run(_process_document(doc_id, file_path, title))
 
 
-async def _process_document(doc_id: str, file_path: str, title: str):
+def _extract_text_pypdf(file_bytes: bytes) -> str:
+    """pypdf ile metin çıkar; taranmış sayfalarda boş döner."""
     from pypdf import PdfReader
+    import io
+    reader = PdfReader(io.BytesIO(file_bytes))
+    parts = [page.extract_text() or '' for page in reader.pages]
+    return " ".join(parts)
+
+
+def _extract_text_ocr(file_bytes: bytes, max_pages: int = 15) -> str:
+    """
+    Taranmış PDF için OCR fallback.
+    pdf2image ile sayfaları görüntüye çevirir, pytesseract ile okur.
+    Türkçe+İngilizce dil paketi kullanır.
+    max_pages: Celery worker zaman aşımını önlemek için sayfa sınırı.
+    """
+    try:
+        from pdf2image import convert_from_bytes
+        import pytesseract
+
+        logger.info(f"OCR başlatılıyor (max {max_pages} sayfa, dpi=200)")
+        images = convert_from_bytes(
+            file_bytes,
+            dpi=200,
+            first_page=1,
+            last_page=max_pages,
+        )
+
+        parts = []
+        for i, img in enumerate(images, 1):
+            page_text = pytesseract.image_to_string(img, lang='tur+eng')
+            if page_text.strip():
+                parts.append(page_text.strip())
+            logger.info(f"OCR sayfa {i}/{len(images)}: {len(page_text)} karakter")
+
+        result = "\n\n".join(parts)
+        logger.info(f"OCR tamamlandı: toplam {len(result)} karakter")
+        return result
+
+    except ImportError:
+        logger.warning("pdf2image veya pytesseract kurulu değil — OCR atlanıyor")
+        return ""
+    except Exception as exc:
+        logger.error(f"OCR hatası: {exc}")
+        return ""
+
+
+async def _process_document(doc_id: str, file_path: str, title: str):
     import io
     from sqlalchemy import update
     from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -42,16 +88,17 @@ async def _process_document(doc_id: str, file_path: str, title: str):
         try:
             file_bytes = storage_service.download_file(file_path)
 
-            reader = PdfReader(io.BytesIO(file_bytes))
-            pages_text = []
-            for page in reader.pages:
-                text = page.extract_text()
-                if text:
-                    pages_text.append(text)
+            # 1. pypdf ile metin çıkarmayı dene
+            text = _extract_text_pypdf(file_bytes)
 
-            text = " ".join(pages_text)
+            # 2. Boş ya da çok az metin → taranmış PDF, OCR'a geç
+            if len(text.strip()) < 100:
+                logger.info(f"pypdf yetersiz metin ({len(text.strip())} karakter) — OCR deneniyor")
+                text = _extract_text_ocr(file_bytes)
 
+            # 3. OCR da boş döndüyse başlığı bağlam olarak kullan
             if not text.strip():
+                logger.warning(f"Metin çıkarılamadı, başlık kullanılıyor: {title}")
                 text = title
 
             summary = llm_service.summarize_document(text)
