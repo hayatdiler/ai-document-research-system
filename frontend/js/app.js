@@ -154,6 +154,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initModals();
   initKeyboardShortcuts();
   startAutoRefresh();
+  // Varsayılan renk noktalarını aktif göster
+  const firstHl = document.querySelector('#hl-dots .cdot');
+  const firstUl = document.querySelector('#ul-dots .cdot');
+  if (firstHl) firstHl.classList.add('cdot-active');
+  if (firstUl) firstUl.classList.add('cdot-active');
 });
 
 async function loadDashboardStats() {

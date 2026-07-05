@@ -88,14 +88,22 @@
 .status-queue { background: rgba(255,193,7,0.15); color: #c89a00; }
 
 /* ── PDF Tam Ekran ── */
+body.pdf-is-fullscreen .sidebar,
+body.pdf-is-fullscreen header,
+body.pdf-is-fullscreen .doc-info-panel {
+  display: none !important;
+}
+
 .pdf-viewer-panel.pdf-fullscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
   border-radius: 0;
   background: #1a1a2e;
   display: flex;
   flex-direction: column;
+  width: 100vw !important;
+  height: 100vh !important;
 }
 .pdf-viewer-panel.pdf-fullscreen .pdf-canvas {
   flex: 1;

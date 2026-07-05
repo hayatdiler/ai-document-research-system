@@ -332,7 +332,7 @@ async function renderPage(pageNum, pageDiv) {
     if (renderTask?.promise) await renderTask.promise;
   } catch { /* bazı PDF.js sürümlerinde promise yok — ignore */ }
 
-  applyAnnotationsToPage(pageNum, textLayerDiv);
+  requestAnimationFrame(() => applyAnnotationsToPage(pageNum, textLayerDiv));
 }
 
 /* ─── Sağ paneldeki annotation listesini render et ─── */
@@ -490,7 +490,7 @@ function applyAnnotationsToPage(pageNum, textLayerDiv) {
   }
 }
 
-/* ─── Text span'larında annotation metnini bul ve vurgula ─── */
+/* ─── Text span'larında annotation metnini bul ve overlay div ile vurgula ─── */
 function highlightTextInLayer(textLayerDiv, annotation) {
   const spans = Array.from(textLayerDiv.querySelectorAll('span'));
   if (!spans.length) return;
@@ -498,7 +498,6 @@ function highlightTextInLayer(textLayerDiv, annotation) {
   const searchText = annotation.selected_text.trim().toLowerCase();
   if (searchText.length < 3) return;
 
-  // Tüm span metinlerini birleştir, konum haritası oluştur
   let fullText = '';
   const spanMap = spans.map(span => {
     const start = fullText.length;
@@ -506,40 +505,103 @@ function highlightTextInLayer(textLayerDiv, annotation) {
     return { span, start, end: fullText.length };
   });
 
-  // İlk eşleşmeyi bul (max 80 karakter karşılaştır)
   const needle = searchText.slice(0, 80);
   const foundIdx = fullText.toLowerCase().indexOf(needle);
   if (foundIdx === -1) return;
 
   const foundEnd = foundIdx + needle.length;
 
-  // Eşleşen span'ları vurgula
+  // pageDiv: textLayerDiv'in parent'ı — overflow:hidden olmadığı için buraya ekle
+  const pageDiv = textLayerDiv.parentElement;
+  const pageRect = pageDiv.getBoundingClientRect();
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let found = false;
+
   for (const { span, start, end } of spanMap) {
     if (end > foundIdx && start < foundEnd) {
-      span.style.backgroundColor = annotation.color;
-      span.style.opacity = '0.75';
-      span.style.borderRadius = '2px';
-      span.style.cursor = 'pointer';
-      span.dataset.annotationId = annotation.annotation_id;
-      span.title = `📌 Kaldırmak için tıkla: ${annotation.selected_text.slice(0, 60)}`;
-      span.onclick = (e) => { e.stopPropagation(); deleteAnnotation(annotation.annotation_id); };
+      const r = span.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) continue;
+      minX = Math.min(minX, r.left   - pageRect.left);
+      minY = Math.min(minY, r.top    - pageRect.top);
+      maxX = Math.max(maxX, r.right  - pageRect.left);
+      maxY = Math.max(maxY, r.bottom - pageRect.top);
+      found = true;
     }
   }
+
+  if (!found) return;
+
+  const isUnderline = annotation.color === '#4caf8f';
+  const hl = document.createElement('div');
+  hl.dataset.annotationId = annotation.annotation_id;
+  hl.title = `📌 Kaldırmak için tıkla: ${annotation.selected_text.slice(0, 60)}`;
+
+  if (isUnderline) {
+    hl.style.cssText = `
+      position:absolute;
+      left:${minX}px; top:${maxY - 2}px;
+      width:${maxX - minX}px; height:3px;
+      background:${annotation.color};
+      border-radius:1px;
+      pointer-events:none;
+      z-index:6;
+    `;
+  } else {
+    hl.style.cssText = `
+      position:absolute;
+      left:${minX}px; top:${minY}px;
+      width:${maxX - minX}px; height:${maxY - minY}px;
+      background:${annotation.color};
+      opacity:0.35;
+      border-radius:2px;
+      pointer-events:none;
+      z-index:6;
+    `;
+  }
+
+  pageDiv.appendChild(hl);
 }/* ─── Annotation kaydet ─── */
+
+/* ─── Renk seçimi ─── */
+let _hlColor = '#FFFF00';
+let _ulColor = '#4caf8f';
+
+function setHlColor(color, el) {
+  _hlColor = color;
+  document.querySelectorAll('#hl-dots .cdot').forEach(d => d.classList.remove('cdot-active'));
+  el.classList.add('cdot-active');
+}
+function setUlColor(color, el) {
+  _ulColor = color;
+  document.querySelectorAll('#ul-dots .cdot').forEach(d => d.classList.remove('cdot-active'));
+  el.classList.add('cdot-active');
+}
+
+async function eraseSelectedAnnotation() {
+  if (!currentDocId) { showToast('❌ Önce bir belge açın.', 'error'); return; }
+  const selection = window.getSelection();
+  const selectedText = selection ? selection.toString().trim() : '';
+  if (!selectedText) {
+    // Seçim yoksa — tıklanan span'ın annotation'ını sil
+    showToast('❌ Önce silmek istediğiniz vurgulu metni seçin.', 'error');
+    return;
+  }
+  // Seçilen metinle eşleşen annotation'ı bul
+  const needle = selectedText.slice(0, 80).toLowerCase();
+  const match = _docAnnotations.find(a => a.selected_text.toLowerCase().slice(0, 80) === needle);
+  if (!match) { showToast('❌ Bu metne ait vurgulama bulunamadı.', 'error'); return; }
+  selection.removeAllRanges();
+  await deleteAnnotation(match.annotation_id);
+}
 
 async function deleteAnnotation(annotationId) {
   try {
     await API.AnnotationsAPI.delete(annotationId);
     _docAnnotations = _docAnnotations.filter(a => a.annotation_id !== annotationId);
     renderAnnotationsList(_docAnnotations);
-    // Tüm sayfadaki bu annotation span'larını temizle
-    document.querySelectorAll(`[data-annotation-id="${annotationId}"]`).forEach(span => {
-      span.style.backgroundColor = '';
-      span.style.opacity = '';
-      span.style.cursor = '';
-      span.onclick = null;
-      delete span.dataset.annotationId;
-    });
+    // Overlay div'leri kaldır
+    document.querySelectorAll(`[data-annotation-id="${annotationId}"]`).forEach(el => el.remove());
     showToast('🗑 Vurgu kaldırıldı.');
   } catch (err) {
     showToast(`❌ ${err.message}`, 'error');
@@ -559,14 +621,14 @@ async function saveAnnotation(color = '#FFFF00') {
   if (!selectedText) return;
 
   try {
-    await API.AnnotationsAPI.create(currentDocId, selectedText, null, color);
+    await API.AnnotationsAPI.create(currentDocId, selectedText, currentPage, color);
     showToast('✅ Vurgu kaydedildi!');
     selection.removeAllRanges();
-    // Annotation listesini yenile ve sayfaya uygula
     _docAnnotations = await API.AnnotationsAPI.list(currentDocId);
     renderAnnotationsList(_docAnnotations);
-    const pageDiv = document.querySelector('.pdf-page-wrapper .textLayer');
-    if (pageDiv) applyAnnotationsToPage(_currentPageNum || 1, pageDiv);
+    // Mevcut sayfanın textLayer'ına uygula
+    const textLayer = document.querySelector(`[data-page-num="${currentPage}"] .textLayer`);
+    if (textLayer) applyAnnotationsToPage(currentPage, textLayer);
   } catch (err) {
     showToast(`❌ ${err.message}`, 'error');
   }
@@ -590,22 +652,29 @@ async function saveSelectedAnnotation(color) {
     return;
   }
 
-  const pageDiv = selection.anchorNode?.parentElement?.closest('[data-page-num]');
-  const pageNumber = pageDiv ? parseInt(pageDiv.dataset.pageNum) : null;
+  const pageDiv   = selection.anchorNode?.parentElement?.closest('[data-page-num]');
+  const pageNumber = pageDiv ? parseInt(pageDiv.dataset.pageNum) : currentPage;
+
+  // Seçim aktifken koordinatları al (removeAllRanges öncesi)
+  const range    = selection.getRangeAt(0);
+  const rects    = Array.from(range.getClientRects());
+  const pageRect = pageDiv ? pageDiv.getBoundingClientRect() : null;
 
   selection.removeAllRanges();
 
   try {
     const ann = await API.AnnotationsAPI.create(currentDocId, selectedText, pageNumber, color);
-
-    // Cache'e ekle, listeyi ve sayfayı hemen güncelle
     _docAnnotations.push(ann);
     renderAnnotationsList(_docAnnotations);
 
-    const targetPage    = pageNumber || 1;
-    const targetPageDiv = document.querySelector(`[data-page-num="${targetPage}"]`);
-    const textLayerDiv  = targetPageDiv?.querySelector('.textLayer');
-    if (textLayerDiv) highlightTextInLayer(textLayerDiv, ann);
+    // Koordinatlar varsa hemen overlay çiz
+    if (pageDiv && pageRect && rects.length > 0) {
+      drawHighlightFromRects(pageDiv, pageRect, rects, ann, color);
+    } else {
+      // Fallback: text arama ile dene
+      const textLayer = document.querySelector(`[data-page-num="${pageNumber}"] .textLayer`);
+      if (textLayer) highlightTextInLayer(textLayer, ann);
+    }
 
     showToast('✅ Annotation kaydedildi!');
   } catch (err) {
@@ -613,10 +682,41 @@ async function saveSelectedAnnotation(color) {
   }
 }
 
+function drawHighlightFromRects(pageDiv, pageRect, rects, ann, color) {
+  const isUnderline = color === '#4caf8f';
+  rects.forEach(r => {
+    if (r.width < 2) return;
+    const hl = document.createElement('div');
+    hl.dataset.annotationId = ann.annotation_id;
+    hl.title = `📌 Kaldırmak için tıkla`;
+    if (isUnderline) {
+      hl.style.cssText = `
+        position:absolute;
+        left:${r.left - pageRect.left}px;
+        top:${r.bottom - pageRect.top - 2}px;
+        width:${r.width}px; height:3px;
+        background:${color}; border-radius:1px;
+        pointer-events:none; z-index:6;
+      `;
+    } else {
+      hl.style.cssText = `
+        position:absolute;
+        left:${r.left - pageRect.left}px;
+        top:${r.top - pageRect.top}px;
+        width:${r.width}px; height:${r.height}px;
+        background:${color}; opacity:0.35; border-radius:2px;
+        pointer-events:none; z-index:6;
+      `;
+    }
+    pageDiv.appendChild(hl);
+  });
+}
+
 function togglePdfFullscreen() {
   const panel = document.querySelector('.pdf-viewer-panel');
   const btn   = document.getElementById('fullscreen-btn');
   const isFs  = panel.classList.toggle('pdf-fullscreen');
+  document.body.classList.toggle('pdf-is-fullscreen', isFs);
   btn.textContent = isFs ? '✕' : '⛶';
   btn.title = isFs ? 'Tam Ekrandan Çık (ESC)' : 'Tam Ekran';
 }

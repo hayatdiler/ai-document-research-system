@@ -183,9 +183,6 @@
                onkeydown="if(event.key==='Enter'){ switchTab('search',null); document.getElementById('main-search-input').value=this.value; runSearch(); }">
       </div>
       <div class="header-actions">
-        <div class="icon-btn" onclick="openModal('notif-modal')" title="Bildirimler">
-          🔔<span class="notif-dot"></span>
-        </div>
         <div class="header-avatar" id="header-avatar" onclick="switchTab('settings', null)" title="Ayarlar" style="cursor:pointer">?</div>
       </div>
     </header>
@@ -388,9 +385,27 @@
             </div>
             <div class="annotation-toolbar">
               <span class="ann-label">Araçlar:</span>
-              <button class="ann-btn ann-highlight" onclick="saveSelectedAnnotation('#FFFF00')">🖍 Vurgula</button>
+              <div class="ann-group">
+                <button class="ann-btn ann-highlight" onclick="saveSelectedAnnotation(_hlColor)">🖍 Vurgula</button>
+                <span class="color-dots" id="hl-dots">
+                  <span class="cdot" style="background:#FFFF00" onclick="setHlColor('#FFFF00',this)" title="Sarı"></span>
+                  <span class="cdot" style="background:#FF6B6B" onclick="setHlColor('#FF6B6B',this)" title="Kırmızı"></span>
+                  <span class="cdot" style="background:#74C0FC" onclick="setHlColor('#74C0FC',this)" title="Mavi"></span>
+                  <span class="cdot" style="background:#B2F2BB" onclick="setHlColor('#B2F2BB',this)" title="Yeşil"></span>
+                  <span class="cdot" style="background:#E5DBFF" onclick="setHlColor('#E5DBFF',this)" title="Mor"></span>
+                </span>
+              </div>
               <button class="ann-btn ann-comment" onclick="saveSelectedAnnotation('#3F72AF')">💬 Yorum</button>
-              <button class="ann-btn ann-underline" onclick="saveSelectedAnnotation('#4caf8f')">__ Altı Çiz</button>
+              <div class="ann-group">
+                <button class="ann-btn ann-underline" onclick="saveSelectedAnnotation(_ulColor)">__ Altı Çiz</button>
+                <span class="color-dots" id="ul-dots">
+                  <span class="cdot" style="background:#4caf8f" onclick="setUlColor('#4caf8f',this)" title="Yeşil"></span>
+                  <span class="cdot" style="background:#FF6B6B" onclick="setUlColor('#FF6B6B',this)" title="Kırmızı"></span>
+                  <span class="cdot" style="background:#3F72AF" onclick="setUlColor('#3F72AF',this)" title="Mavi"></span>
+                  <span class="cdot" style="background:#f59f00" onclick="setUlColor('#f59f00',this)" title="Turuncu"></span>
+                </span>
+              </div>
+              <button class="ann-btn ann-erase" onclick="eraseSelectedAnnotation()" title="Seçili metindeki vurguyu sil">🧽 Sil</button>
             </div>
             <div class="pdf-canvas" id="pdf-canvas">
               <div style="text-align:center;color:rgba(255,255,255,0.4);padding:60px 20px">
