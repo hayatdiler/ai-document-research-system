@@ -4,7 +4,7 @@
 
 ArcticDocs; araştırmacıların ve öğrencilerin akademik belgelerini (PDF / TXT) merkezi bir platformda yönetmelerini, yapay zeka desteğiyle analiz etmelerini ve anlam bazlı (semantik) arama yapmalarını sağlayan modern bir doküman yönetim sistemidir.
 
-Kullanıcılar belgelerini sisteme yükledikten sonra Groq LLM (Llama 3.1) otomatik olarak her belgeyi özetler ve anahtar kelimelerini çıkarır. pgvector tabanlı vektör indeksi sayesinde belgeler arasında anlam bazlı arama yapılabilir; APA, MLA, BibTeX ve IEEE formatlarında akademik atıf üretilebilir. Tüm bu ağır LLM işlemleri Celery ve Redis üzerinden asenkron olarak yönetilir.
+Kullanıcılar belgelerini sisteme yükledikten sonra Groq LLM (Llama 3.1 8B Instant) otomatik olarak her belgeyi özetler ve anahtar kelimelerini çıkarır. pgvector tabanlı vektör indeksi sayesinde belgeler arasında anlam bazlı arama yapılabilir; APA, MLA, BibTeX ve IEEE formatlarında akademik atıf üretilebilir. Tüm bu ağır LLM işlemleri Celery ve Redis üzerinden asenkron olarak yönetilir.
 
 ---
 
@@ -13,15 +13,18 @@ Kullanıcılar belgelerini sisteme yükledikten sonra Groq LLM (Llama 3.1) otoma
 | # | Özellik | Açıklama |
 |---|---|---|
 | 1 | **Akıllı Belge Analizi** | Yüklenen PDF/TXT dosyaları Groq LLM (Llama 3.1 8B Instant) ile otomatik olarak özetlenir ve anahtar kelimeleri çıkarılır. |
-| 2 | **Semantik Arama** | `pgvector` + `HNSW` indeksi ile belgeler arasında anlam bazlı vektörel arama yapılır. |
-| 3 | **Akademik Atıf Üretimi** | APA, MLA, BibTeX ve IEEE formatlarında tek tıkla atıf oluşturma ve dışa aktarma. |
+| 2 | **Semantik Arama** | `pgvector` + `HNSW` indeksi ile belgeler arasında anlam bazlı vektörel arama yapılır. Yıl aralığı ve yazar filtresi desteklenir. |
+| 3 | **Akademik Atıf Üretimi** | APA, MLA, BibTeX ve IEEE formatlarında tek tıkla atıf oluşturma; koleksiyon düzeyinde toplu BibTeX dışa aktarma. |
 | 4 | **Tarayıcı İçi PDF Görüntüleyici** | PDF.js ile sayfa gezinme, yakınlaştırma ve metin üzerinde vurgulama / yorum / alt çizgi ekleme. |
-| 5 | **Koleksiyon Yönetimi** | Belgeler tematik koleksiyonlara gruplanabilir; koleksiyon düzeyinde literatür özeti ve trend analizi raporu oluşturulabilir. |
-| 6 | **Asenkron İşlem Kuyruğu** | Uzun süren LLM işlemleri Celery + Redis aracılığıyla arka planda yönetilir; kullanıcı arayüzü bloke olmaz. |
-| 7 | **Çoklu Kimlik Doğrulama** | E-posta/şifre ile kayıt ve JWT tabanlı oturum yönetiminin yanı sıra Google ve GitHub OAuth 2.0 ile sosyal giriş. |
-| 8 | **Hız Sınırlama (Rate Limiting)** | `slowapi` ile API uç noktalarına istek sınırı uygulanarak sunucu kötüye kullanımı önlenir. |
-| 9 | **Yönetici Paneli** | Admin kullanıcıları sistem istatistiklerini, kullanıcı listesini ve işlem loglarını görüntüleyebilir. |
-| 10 | **Tam Konteynerize Altyapı** | Docker Compose ile tek komutta tüm servisler (API, veritabanı, önbellek, dosya depolama) ayağa kalkar. |
+| 5 | **Koleksiyon Yönetimi** | Belgeler tematik koleksiyonlara gruplanabilir; koleksiyon düzeyinde literatür özeti, trend analizi ve metodoloji karşılaştırma raporu oluşturulabilir (PDF / DOCX). |
+| 6 | **Koleksiyon Paylaşımı** | Koleksiyonlar herkese açık salt-okunur bağlantıyla paylaşılabilir. |
+| 7 | **Okuma Durumu Takibi** | Her belge için Unread / Reading / Read / Reviewed durumu izlenebilir. |
+| 8 | **Gerçek Zamanlı Özet Akışı** | Belge özeti Groq'tan token bazlı SSE akışı ile anlık görüntülenir. |
+| 9 | **Asenkron İşlem Kuyruğu** | Uzun süren LLM işlemleri Celery + Redis aracılığıyla arka planda yönetilir; kullanıcı arayüzü bloke olmaz. |
+| 10 | **Çoklu Kimlik Doğrulama** | E-posta/şifre ile kayıt ve JWT tabanlı oturum yönetimi; Google ve GitHub OAuth 2.0 altyapısı hazır. |
+| 11 | **Hız Sınırlama (Rate Limiting)** | `slowapi` ile API uç noktalarına istek sınırı uygulanarak sunucu kötüye kullanımı önlenir. |
+| 12 | **Yönetici Paneli** | Admin kullanıcıları sistem istatistiklerini, kullanıcı listesini ve işlem loglarını görüntüleyebilir. |
+| 13 | **Tam Konteynerize Altyapı** | Docker Compose ile tek komutta tüm servisler (API, veritabanı, önbellek, dosya depolama) ayağa kalkar. |
 
 ---
 
@@ -38,8 +41,8 @@ Kullanıcılar belgelerini sisteme yükledikten sonra Groq LLM (Llama 3.1) otoma
 | Alembic | 1.13.1 | Veritabanı migration yönetimi |
 | Pydantic | 2.7.1 | Veri doğrulama ve şema yönetimi |
 | Celery | 5.4.0 | Asenkron görev kuyruğu |
-| Groq SDK | 0.9.0 | LLM (Llama 3.1) entegrasyonu |
-| Sentence Transformers | 3.0.1 | Metin embedding üretimi |
+| Groq SDK | 0.11.0 | LLM (Llama 3.1 8B Instant) entegrasyonu |
+| Sentence Transformers | 3.0.1 | Metin embedding üretimi (all-MiniLM-L6-v2, 384 boyut) |
 | python-jose | 3.3.0 | JWT token üretimi ve doğrulama |
 | passlib / bcrypt | 1.7.4 | Şifre hashleme |
 | MinIO SDK | 7.2.7 | Nesne depolama istemcisi |
@@ -52,7 +55,7 @@ Kullanıcılar belgelerini sisteme yükledikten sonra Groq LLM (Llama 3.1) otoma
 |---|---|
 | HTML5 | Sayfa yapısı |
 | CSS3 (Vanilla) | Stil; `variables.css`, `layout.css`, `dashboard.css`, `components.css`, `login.css` modülleri |
-| JavaScript (Vanilla) | İstemci mantığı; `api.js`, `auth.js`, `upload.js`, `search.js`, `collections.js`, `citation.js` modülleri |
+| JavaScript (Vanilla) | İstemci mantığı; `api.js`, `auth.js`, `upload.js`, `search.js`, `collections.js`, `citation.js`, `chat.js`, `share.js` modülleri |
 | PDF.js 3.11 | Tarayıcı içi PDF görüntüleme |
 | Google Fonts | Cormorant Garamond, DM Sans, JetBrains Mono fontları |
 
@@ -61,7 +64,7 @@ Kullanıcılar belgelerini sisteme yükledikten sonra Groq LLM (Llama 3.1) otoma
 | Teknoloji | Kullanım Amacı |
 |---|---|
 | PostgreSQL 16 | İlişkisel veritabanı |
-| pgvector | Vektör depolama ve HNSW tabanlı semantik arama |
+| pgvector | Vektör depolama ve HNSW tabanlı semantik arama (384 boyut) |
 
 ### Altyapı ve Diğer Servisler
 
@@ -71,8 +74,6 @@ Kullanıcılar belgelerini sisteme yükledikten sonra Groq LLM (Llama 3.1) otoma
 | MinIO | Self-hosted S3 uyumlu nesne depolama (PDF/TXT dosyaları) |
 | Docker & Docker Compose | Konteynerize dağıtım |
 | Groq API | Bulut tabanlı LLM (Llama 3.1 8B Instant) servisi |
-| Google OAuth 2.0 | Sosyal kimlik doğrulama |
-| GitHub OAuth 2.0 | Sosyal kimlik doğrulama |
 
 ---
 
@@ -81,14 +82,13 @@ Kullanıcılar belgelerini sisteme yükledikten sonra Groq LLM (Llama 3.1) otoma
 ### Ön Koşullar
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Docker Engine + Docker Compose dahil)
-- Python 3.11+ *(yalnızca frontend yerel sunucusu için)*
 - Groq API Anahtarı — [console.groq.com](https://console.groq.com) adresinden ücretsiz alınabilir
 
 ### 1. Depoyu Klonlayın
 
 ```bash
-git clone https://github.com/kullanici-adi/ai-document-research-system-1.git
-cd ai-document-research-system-1
+git clone https://github.com/kullanici-adi/ai-document-research-system.git
+cd ai-document-research-system
 ```
 
 ### 2. Ortam Değişkenlerini Yapılandırın
@@ -118,7 +118,7 @@ GITHUB_CLIENT_SECRET=...
 docker-compose up --build
 ```
 
-Bu komut aşağıdaki servisleri otomatik olarak başlatır:
+Bu komut aşağıdaki servisleri otomatik olarak başlatır ve Alembic migration'larını çalıştırır:
 
 | Servis | Adres |
 |---|---|
@@ -144,18 +144,35 @@ Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresini açın.
 
 ---
 
+## Veritabanı Migration Yönetimi
+
+Proje Alembic ile yönetilen migration'lara sahiptir. Uygulama başladığında migration'lar otomatik çalışır.
+
+```bash
+# Yeni migration oluşturmak için (backend/ dizininde)
+docker exec docai_api alembic revision --autogenerate -m "aciklama"
+
+# Migration durumunu görmek için
+docker exec docai_api alembic current
+
+# Migration geçmişini görmek için
+docker exec docai_api alembic history
+```
+
+---
+
 ## Kullanım
 
 ### Hesap Oluşturma ve Giriş
 
 1. Uygulama açıldığında giriş/kayıt ekranı karşılar.
-2. **Hesap Oluştur** sekmesinden e-posta ve şifre ile kayıt olun ya da **Google / GitHub** ile hızlı giriş yapın.
+2. **Hesap Oluştur** sekmesinden e-posta ve şifre ile kayıt olun.
 
 ### Belge Yükleme
 
 1. Sol menüden **Belge Yükle** sekmesine geçin.
 2. PDF veya TXT dosyalarını sürükleyip bırakın ya da **Dosya Seç** butonunu kullanın.
-3. Başlık, yazar, yıl ve yayın bilgilerini girin; varsayılan atıf formatını seçin.
+3. Başlık, yazar, yıl ve yayın bilgilerini girin.
 4. **Yükle ve İşle** butonuna tıklayın.
 5. Arka planda Celery worker belgeyi işler; LLM özeti ve anahtar kelimeler otomatik oluşturulur.
 
@@ -163,8 +180,8 @@ Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresini açın.
 
 1. Sol menüden **Semantik Arama** sekmesine geçin.
 2. Doğal dil ifadesiyle sorgu girin (ör. *"iklim değişikliğinin tarımsal verime etkisi"*).
-3. **Normal** veya **Semantik** mod seçin; **Ara** butonuna tıklayın.
-4. Sonuçlar anlam benzerliğine göre sıralanır.
+3. İsteğe bağlı olarak yıl aralığı ve yazar filtresi uygulayın.
+4. **Ara** butonuna tıklayın; sonuçlar anlam benzerliğine göre sıralanır.
 
 ### PDF Görüntüleyici ve Notlar
 
@@ -176,7 +193,7 @@ Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresini açın.
 ### Atıf Oluşturma
 
 1. PDF görüntüleyici sağ panelinde **Atıf Oluştur** butonuna tıklayın.
-2. Açılan modalde APA, MLA, BibTeX veya IEEE formatını seçin.
+2. APA, MLA, BibTeX veya IEEE formatını seçin.
 3. **Kopyala** ya da **İndir** ile atıfı dışa aktarın.
 
 ### Koleksiyonlar ve Raporlar
@@ -184,13 +201,16 @@ Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresini açın.
 1. Sol menüden **Koleksiyonlar** sekmesine geçin.
 2. **+ Yeni Koleksiyon** ile tematik bir klasör oluşturun.
 3. Belgelerinizi koleksiyona ekleyin.
-4. **Rapor Oluştur** ile koleksiyondaki belgelerin literatür özeti, trend analizi veya karşılaştırma raporunu LLM'e oluşturturun.
+4. **Rapor Oluştur** ile koleksiyondaki belgelerin literatür özeti, trend analizi veya karşılaştırma raporunu LLM'e oluşturturun (PDF veya DOCX olarak indirilebilir).
+5. **Bağlantı Oluştur** ile koleksiyonu salt-okunur herkese açık link ile paylaşın.
 
 ---
 
 ## Katkı
-### Hayat Diler
-### Nilay Kuru
+
+- Hayat Diler (170423011)
+- Nilay Kuru (170423035)
+
 ---
 
 ## Lisans
@@ -199,5 +219,4 @@ Bu proje [MIT Lisansı](https://opensource.org/licenses/MIT) kapsamında lisansl
 
 ---
 
-*Hazırlayanlar: **170423011 - Hayat Diler** · **170423035 - Nilay Kuru***  
 *IEEE Std 1016-2009 standartlarına uygun olarak tasarlanmıştır.*

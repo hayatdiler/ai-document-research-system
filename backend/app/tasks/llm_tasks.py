@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 celery_app = Celery("docai", broker=settings.REDIS_URL, backend=settings.REDIS_URL)
 celery_app.conf.task_serializer = "json"
 celery_app.conf.result_serializer = "json"
+celery_app.conf.broker_connection_retry_on_startup = True
 
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=30)

@@ -44,6 +44,25 @@ async def list_collections(
     return result.scalars().all()
 
 
+@router.get("/{collection_id}", response_model=CollectionOut)
+async def get_collection(
+    collection_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Koleksiyon detayını döner."""
+    result = await db.execute(
+        select(Collection).where(
+            Collection.collection_id == collection_id,
+            Collection.owner_id == uuid.UUID(current_user_id),
+        )
+    )
+    col = result.scalar_one_or_none()
+    if not col:
+        raise HTTPException(status_code=404, detail="Koleksiyon bulunamadı")
+    return col
+
+
 @router.post("/{collection_id}/documents/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def add_document_to_collection(
     collection_id: uuid.UUID,

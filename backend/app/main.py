@@ -2,6 +2,8 @@
 Yapay Zeka Destekli Doküman ve Araştırma Yönetim Sistemi
 Backend: Python 3.11 + FastAPI | LLM: Groq (Llama 3.1) | Depolama: MinIO
 """
+import asyncio
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -12,7 +14,7 @@ from sqlalchemy import text
 import logging
 
 from app.core.config import settings
-from app.db.session import engine, Base
+from app.db.session import engine
 from app.services.storage_service import ensure_bucket_exists
 from app.api.v1.endpoints import admin, annotations, auth, chat, citations, collections, documents, search, share, stats
 
@@ -22,35 +24,44 @@ from slowapi.errors import RateLimitExceeded
 
 logger = logging.getLogger(__name__)
 
+
+def _alembic_cfg():
+    from alembic.config import Config
+    return Config(os.path.join(os.path.dirname(__file__), "..", "alembic.ini"))
+
+
+def _alembic_upgrade():
+    from alembic import command
+    command.upgrade(_alembic_cfg(), "head")
+
+
+def _alembic_stamp_head():
+    from alembic import command
+    command.stamp(_alembic_cfg(), "head")
+    logger.info("Alembic: mevcut veritabanı 'head' olarak işaretlendi")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Uygulama başlangıcı ve kapanışında çalışan işlemler."""
-    # DB tablolarını oluştur (production'da Alembic migration kullanılmalı)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-        # Mevcut tablolara yeni sütunları güvenli ekle (IF NOT EXISTS)
-        await conn.execute(text(
-            "DO $$ BEGIN "
-            "  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'readingstatus') THEN "
-            "    CREATE TYPE readingstatus AS ENUM ('Unread','Reading','Read','Reviewed'); "
-            "  END IF; "
-            "END $$;"
+    async with engine.connect() as conn:
+        has_version = await conn.scalar(text(
+            "SELECT EXISTS (SELECT FROM information_schema.tables "
+            "WHERE table_schema='public' AND table_name='alembic_version')"
         ))
-        await conn.execute(text(
-            "ALTER TABLE documents "
-            "ADD COLUMN IF NOT EXISTS reading_status VARCHAR(20) NOT NULL DEFAULT 'Unread';"
-        ))
-        await conn.execute(text(
-            "ALTER TABLE collection_reports "
-            "ADD COLUMN IF NOT EXISTS report_text TEXT;"
+        has_users = await conn.scalar(text(
+            "SELECT EXISTS (SELECT FROM information_schema.tables "
+            "WHERE table_schema='public' AND table_name='users')"
         ))
 
-    # MinIO bucket kontrolü
+    if has_users and not has_version:
+        # Tablolar var ama alembic takibi yok → stamp ile işaretle
+        await asyncio.to_thread(_alembic_stamp_head)
+    else:
+        # Temiz DB veya alembic zaten var → upgrade çalıştır
+        await asyncio.to_thread(_alembic_upgrade)
+
     ensure_bucket_exists()
-
     yield
-    # Kapanış işlemleri (gerekirse)
     await engine.dispose()
 
 

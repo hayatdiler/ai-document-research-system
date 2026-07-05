@@ -3,7 +3,8 @@ LLM servisi — Groq (ücretsiz, llama-3.1-8b-instant)
 Özetleme, keyword, embedding, atıf, koleksiyon raporu.
 """
 import json
-from groq import Groq, AsyncGroq
+import time
+from groq import Groq, AsyncGroq, RateLimitError
 from app.core.config import settings
 
 # Sentence Transformers modelini global olarak cache'le
@@ -16,12 +17,18 @@ def _get_client() -> Groq:
 
 def _chat(prompt: str, max_tokens: int = 1000) -> str:
     client = _get_client()
-    response = client.chat.completions.create(
-        model=settings.GROQ_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=max_tokens,
-    )
-    return response.choices[0].message.content.strip()
+    for attempt in range(4):
+        try:
+            response = client.chat.completions.create(
+                model=settings.GROQ_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+            )
+            return response.choices[0].message.content.strip()
+        except RateLimitError:
+            if attempt == 3:
+                raise
+            time.sleep(10 * (attempt + 1))  # 10s, 20s, 30s
 
 
 def _get_st_model():

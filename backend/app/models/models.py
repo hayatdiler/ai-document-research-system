@@ -92,7 +92,8 @@ class Document(Base):
     embedding_vector: Mapped[list[float] | None] = mapped_column(Vector(384), nullable=True)  # all-MiniLM-L6-v2: 384 boyut
     citation_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     reading_status: Mapped[ReadingStatus] = mapped_column(
-        Enum(ReadingStatus), nullable=False, default=ReadingStatus.UNREAD,
+        Enum(ReadingStatus, values_callable=lambda obj: [e.value for e in obj]),
+        nullable=False, default=ReadingStatus.UNREAD,
         server_default=ReadingStatus.UNREAD.value,
     )
 
