@@ -1,29 +1,5 @@
 # ArcticDocs — Yapay Zeka Destekli Doküman ve Araştırma Yönetim Sistemi
 
----
-
-## README Dosyası Hakkında
-
-### README Dosyasının Amacı
-
-README dosyası, bir yazılım projesinin "kapı kartı" işlevi görür. Projeyi ilk kez inceleyen bir geliştirici, kullanıcı veya değerlendirici bu dosya aracılığıyla projenin ne olduğunu, nasıl çalıştığını ve nasıl kullanılacağını öğrenir. İyi bir README; projenin amacını, kurulum adımlarını, kullanım senaryolarını ve katkı kurallarını sade ve anlaşılır bir biçimde aktarır.
-
-### Yazılım Projelerinde Neden Önemlidir?
-
-- **İlk İzlenim:** Projeyi değerlendiren herkes (hoca, müşteri, işe alımcı) README'yi okuyarak karar verir; eksik ya da dağınık bir README projeyi küçük düşürür.
-- **Zaman Tasarrufu:** Kurulum ve yapılandırma adımları açıkça yazılırsa, ekip üyeleri birbirinden bağımsız şekilde geliştirme ortamı kurabilir.
-- **Sürdürülebilirlik:** Projeye aylar sonra dönen bir geliştirici bile README sayesinde hızla oryante olur.
-- **Açık Kaynak Kültürü:** GitHub'da bir proje ne kadar iyi belgelenirse o kadar çok katkı çeker. README, projenin "vitrin"idir.
-- **Profesyonellik:** Kapsamlı bir README, projenin ciddiyetle ele alındığını gösterir ve akademik/ticari değerini artırır.
-
----
-
-## Proje Adı
-
-**ArcticDocs** — Yapay Zeka Destekli Doküman ve Araştırma Yönetim Sistemi
-
----
-
 ## Proje Tanımı
 
 ArcticDocs; araştırmacıların ve öğrencilerin akademik belgelerini (PDF / TXT) merkezi bir platformda yönetmelerini, yapay zeka desteğiyle analiz etmelerini ve anlam bazlı (semantik) arama yapmalarını sağlayan modern bir doküman yönetim sistemidir.
