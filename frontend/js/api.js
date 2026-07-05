@@ -228,6 +228,9 @@ const AnnotationsAPI = {
 
   /** Belgeye ait annotation'ları listele */
   list: (docId) => apiFetch(`/annotations?doc_id=${docId}`),
+
+  /** Annotation sil */
+  delete: (annotationId) => apiFetch(`/annotations/${annotationId}`, { method: 'DELETE' }),
 };
 
 /* ════════════════════════════════════════

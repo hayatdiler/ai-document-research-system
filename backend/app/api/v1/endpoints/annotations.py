@@ -1,7 +1,7 @@
 """Annotation ve threaded yorum endpoint'leri — /api/annotations/ & /api/comments/"""
 import uuid
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -49,6 +49,26 @@ async def create_annotation(
     await db.commit()
     await db.refresh(ann)
     return ann
+
+
+@router.delete("/annotations/{annotation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_annotation(
+    annotation_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Annotation sil (sadece sahibi silebilir)."""
+    result = await db.execute(
+        select(Annotation).where(
+            Annotation.annotation_id == annotation_id,
+            Annotation.user_id == uuid.UUID(current_user_id),
+        )
+    )
+    ann = result.scalar_one_or_none()
+    if not ann:
+        raise HTTPException(status_code=404, detail="Annotation bulunamadı")
+    await db.delete(ann)
+    await db.commit()
 
 
 @router.post("/comments", response_model=CommentOut, status_code=status.HTTP_201_CREATED)

@@ -27,7 +27,7 @@ def _build_context(documents: list) -> tuple[str, list[dict]]:
         if not summary:
             continue
 
-        chunk = f"[Kaynak {i}: {title}]\n{summary}"
+        chunk = f"[{title}]\n{summary}"
         if total_chars + len(chunk) > limit:
             # Kalan alanı doldur, sonra dur
             remaining = limit - total_chars
@@ -72,7 +72,7 @@ def chat(
         "Sen bir akademik araştırma asistanısın. "
         "Yalnızca aşağıdaki belgelere dayanarak soruları yanıtla. "
         "Belgede geçmeyen bilgileri uydurma; bilmiyorsan açıkça söyle. "
-        "Türkçe yanıtla. Kaynakları atıfla göster (ör. [Kaynak 1]).\n\n"
+        "Türkçe yanıtla. Kaynakları makale başlığıyla atıfla göster (ör. [Makale Başlığı]).\n\n"
         f"BELGELER:\n{context}"
     )
 

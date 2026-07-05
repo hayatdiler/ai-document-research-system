@@ -86,3 +86,18 @@
 .status-done { background: rgba(76,175,143,0.15); color: var(--success); }
 .status-proc { background: rgba(63,114,175,0.12); color: var(--primary); }
 .status-queue { background: rgba(255,193,7,0.15); color: #c89a00; }
+
+/* ── PDF Tam Ekran ── */
+.pdf-viewer-panel.pdf-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  border-radius: 0;
+  background: #1a1a2e;
+  display: flex;
+  flex-direction: column;
+}
+.pdf-viewer-panel.pdf-fullscreen .pdf-canvas {
+  flex: 1;
+  overflow-y: auto;
+}

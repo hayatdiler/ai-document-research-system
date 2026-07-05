@@ -521,10 +521,30 @@ function highlightTextInLayer(textLayerDiv, annotation) {
       span.style.borderRadius = '2px';
       span.style.cursor = 'pointer';
       span.dataset.annotationId = annotation.annotation_id;
-      span.title = `📌 ${annotation.selected_text.slice(0, 80)}`;
+      span.title = `📌 Kaldırmak için tıkla: ${annotation.selected_text.slice(0, 60)}`;
+      span.onclick = (e) => { e.stopPropagation(); deleteAnnotation(annotation.annotation_id); };
     }
   }
 }/* ─── Annotation kaydet ─── */
+
+async function deleteAnnotation(annotationId) {
+  try {
+    await API.AnnotationsAPI.delete(annotationId);
+    _docAnnotations = _docAnnotations.filter(a => a.annotation_id !== annotationId);
+    renderAnnotationsList(_docAnnotations);
+    // Tüm sayfadaki bu annotation span'larını temizle
+    document.querySelectorAll(`[data-annotation-id="${annotationId}"]`).forEach(span => {
+      span.style.backgroundColor = '';
+      span.style.opacity = '';
+      span.style.cursor = '';
+      span.onclick = null;
+      delete span.dataset.annotationId;
+    });
+    showToast('🗑 Vurgu kaldırıldı.');
+  } catch (err) {
+    showToast(`❌ ${err.message}`, 'error');
+  }
+}
 
 async function saveAnnotation(color = '#FFFF00') {
   if (!currentDocId) return;
@@ -540,8 +560,13 @@ async function saveAnnotation(color = '#FFFF00') {
 
   try {
     await API.AnnotationsAPI.create(currentDocId, selectedText, null, color);
-    showToast('✅ Annotation kaydedildi!');
+    showToast('✅ Vurgu kaydedildi!');
     selection.removeAllRanges();
+    // Annotation listesini yenile ve sayfaya uygula
+    _docAnnotations = await API.AnnotationsAPI.list(currentDocId);
+    renderAnnotationsList(_docAnnotations);
+    const pageDiv = document.querySelector('.pdf-page-wrapper .textLayer');
+    if (pageDiv) applyAnnotationsToPage(_currentPageNum || 1, pageDiv);
   } catch (err) {
     showToast(`❌ ${err.message}`, 'error');
   }
@@ -587,6 +612,21 @@ async function saveSelectedAnnotation(color) {
     showToast(`❌ ${err.message}`, 'error');
   }
 }
+
+function togglePdfFullscreen() {
+  const panel = document.querySelector('.pdf-viewer-panel');
+  const btn   = document.getElementById('fullscreen-btn');
+  const isFs  = panel.classList.toggle('pdf-fullscreen');
+  btn.textContent = isFs ? '✕' : '⛶';
+  btn.title = isFs ? 'Tam Ekrandan Çık (ESC)' : 'Tam Ekran';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const panel = document.querySelector('.pdf-viewer-panel');
+    if (panel && panel.classList.contains('pdf-fullscreen')) togglePdfFullscreen();
+  }
+});
 
 function changePage(delta) {
   if (!pdfDoc) return;

@@ -183,11 +183,10 @@
                onkeydown="if(event.key==='Enter'){ switchTab('search',null); document.getElementById('main-search-input').value=this.value; runSearch(); }">
       </div>
       <div class="header-actions">
-        <div class="icon-btn" onclick="switchTab('upload', null)" title="Belge Yükle">📤</div>
         <div class="icon-btn" onclick="openModal('notif-modal')" title="Bildirimler">
           🔔<span class="notif-dot"></span>
         </div>
-        <div class="header-avatar" id="header-avatar">?</div>
+        <div class="header-avatar" id="header-avatar" onclick="switchTab('settings', null)" title="Ayarlar" style="cursor:pointer">?</div>
       </div>
     </header>
 
@@ -385,6 +384,7 @@
               <button class="pdf-tool-btn" onclick="changeScale(0.2)">🔍 +</button>
               <button class="pdf-tool-btn" onclick="changeScale(-0.2)">🔍 −</button>
               <div class="pdf-page-info" id="pdf-page-info">— / — sayfa</div>
+              <button class="pdf-tool-btn" id="fullscreen-btn" onclick="togglePdfFullscreen()" title="Tam Ekran">⛶</button>
             </div>
             <div class="annotation-toolbar">
               <span class="ann-label">Araçlar:</span>
