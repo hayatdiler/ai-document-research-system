@@ -138,14 +138,6 @@ function handleRegisterKeydown(e) {
   if (e.key === 'Enter') handleRegister();
 }
 
-/* ─── OAUTH ─── */
-function loginWithGoogle() {
-  showToast('Google OAuth henüz yapılandırılmamış. Lütfen e-posta ile giriş yapın.', 'error');
-}
-function loginWithGithub() {
-  showToast('GitHub OAuth henüz yapılandırılmamış. Lütfen e-posta ile giriş yapın.', 'error');
-}
-
 /* ─── ÇIKIŞ ─── */
 function handleLogout() {
   API.AuthAPI.logout();
