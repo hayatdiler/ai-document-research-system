@@ -154,11 +154,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initModals();
   initKeyboardShortcuts();
   startAutoRefresh();
-  // Varsayılan renk noktalarını aktif göster
-  const firstHl = document.querySelector('#hl-dots .cdot');
-  const firstUl = document.querySelector('#ul-dots .cdot');
-  if (firstHl) firstHl.classList.add('cdot-active');
-  if (firstUl) firstUl.classList.add('cdot-active');
+  // Varsayılan renk seçimlerini işaretle
+  document.querySelector('#hl-picker .cpick')?.classList.add('cpick-active');
+  document.querySelector('#ul-picker .cpick')?.classList.add('cpick-active');
+  document.querySelector('#cm-picker .cpick')?.classList.add('cpick-active');
 });
 
 async function loadDashboardStats() {

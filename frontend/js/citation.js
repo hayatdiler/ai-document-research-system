@@ -564,18 +564,43 @@ function highlightTextInLayer(textLayerDiv, annotation) {
 }/* ─── Annotation kaydet ─── */
 
 /* ─── Renk seçimi ─── */
-let _hlColor = '#FFFF00';
+let _hlColor = '#FFF176';
 let _ulColor = '#4caf8f';
+let _cmColor = '#3F72AF';
+
+function toggleColorPicker(id) {
+  const picker = document.getElementById(id);
+  const isOpen = picker.classList.contains('open');
+  document.querySelectorAll('.ann-color-picker.open').forEach(p => p.classList.remove('open'));
+  if (!isOpen) picker.classList.add('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ann-split')) {
+    document.querySelectorAll('.ann-color-picker.open').forEach(p => p.classList.remove('open'));
+  }
+});
 
 function setHlColor(color, el) {
   _hlColor = color;
-  document.querySelectorAll('#hl-dots .cdot').forEach(d => d.classList.remove('cdot-active'));
-  el.classList.add('cdot-active');
+  document.getElementById('hl-bar').style.background = color;
+  document.querySelectorAll('#hl-picker .cpick').forEach(d => d.classList.remove('cpick-active'));
+  el.classList.add('cpick-active');
+  document.getElementById('hl-picker').classList.remove('open');
 }
 function setUlColor(color, el) {
   _ulColor = color;
-  document.querySelectorAll('#ul-dots .cdot').forEach(d => d.classList.remove('cdot-active'));
-  el.classList.add('cdot-active');
+  document.getElementById('ul-bar').style.background = color;
+  document.querySelectorAll('#ul-picker .cpick').forEach(d => d.classList.remove('cpick-active'));
+  el.classList.add('cpick-active');
+  document.getElementById('ul-picker').classList.remove('open');
+}
+function setCmColor(color, el) {
+  _cmColor = color;
+  document.getElementById('cm-bar').style.background = color;
+  document.querySelectorAll('#cm-picker .cpick').forEach(d => d.classList.remove('cpick-active'));
+  el.classList.add('cpick-active');
+  document.getElementById('cm-picker').classList.remove('open');
 }
 
 async function eraseSelectedAnnotation() {
